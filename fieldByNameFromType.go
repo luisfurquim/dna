@@ -1,4 +1,4 @@
-package hashsqlite
+package dna
 
 import (
 	"reflect"

@@ -1,10 +1,10 @@
-package hashsqlite
+package dna
 
 import (
 	"reflect"
 )
  
-func (hs *HashSqlite) getSingleRefs(row interface{}) (string, reflect.Value, error) {
+func (d *Dna) getSingleRefs(row interface{}) (string, reflect.Value, error) {
 	var rowType string
 	var tabName string
 	var reftab reflect.Type
@@ -25,7 +25,7 @@ func (hs *HashSqlite) getSingleRefs(row interface{}) (string, reflect.Value, err
 	}
 
 	rowType = reftab.Name()
-	if tabName, ok = hs.tableType[rowType]; !ok {
+	if tabName, ok = d.tableType[rowType]; !ok {
 		Goose.Query.Logf(1, "Parameter type error: %s", ErrNoTablesFound)
 		return "", refRow, ErrNoTablesFound
 	}

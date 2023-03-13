@@ -1,10 +1,25 @@
-package hashsqlite
+package dna
 
 import (
 	"errors"
+	"reflect"
    "github.com/gwenn/gosqlite"
    "github.com/luisfurquim/goose"
 )
+
+type SaveOption byte
+
+const(
+	NoCascade SaveOption = iota
+)
+
+type TableName struct{}
+type PK int64
+type Find struct{}
+type Count struct{}
+type Delete struct{}
+type Index struct{}
+type Save struct{}
 
 type At struct {
 	Table interface{}
@@ -19,7 +34,7 @@ type Schema struct {
 type table struct {
 	name string
 	fields []field
-	xrefs map[string]struct{}
+	xrefs map[string]string
 	pkName string
 	pkIndex int
 }
@@ -50,9 +65,10 @@ type listSpec struct {
 	colTypes map[int]string
 	sort           []string
 	filter           string
+	limit				  string
 }
 
-type HashSqlite struct {
+type Dna struct {
 	tables map[string]table
 	tableType map[string]string
 
@@ -64,8 +80,7 @@ type HashSqlite struct {
 	link map[string]*sqlite.Stmt
 	unlink map[string]*sqlite.Stmt
 	updateBy map[string]map[string]*sqlite.Stmt
-	count map[string]*sqlite.Stmt
-	countBy map[string]map[string]*sqlite.Stmt
+	count map[string]map[string]*sqlite.Stmt
 	listJoin map[string]map[string]*sqlite.Stmt
 	listBy map[string]map[string]*sqlite.Stmt
 	exists map[string]map[string]*sqlite.Stmt
@@ -94,6 +109,15 @@ var ErrNotStructSlicePointer error = errors.New("Parameter must be of pointer to
 var ErrNotStructPointerChan  error = errors.New("Parameter must be of channel of pointer to struct type")
 var ErrNoRuleFound           error = errors.New("No rule found")
 var ErrInvalid               error = errors.New("Invalid")
+var ErrNullColumn            error = errors.New("Null column")
 var ErrPKNotI64              error = errors.New("Primary key is not int64")
 var ErrWrongParmCount        error = errors.New("Wrong parameter count")
 
+
+var TableNameType reflect.Type = reflect.TypeOf(TableName{})
+var PKType reflect.Type = reflect.TypeOf(PK(0))
+var FindType reflect.Type = reflect.TypeOf(Find{})
+var CountType reflect.Type = reflect.TypeOf(Count{})
+var DeleteType reflect.Type = reflect.TypeOf(Delete{})
+var IndexType reflect.Type = reflect.TypeOf(Index{})
+var SaveType reflect.Type = reflect.TypeOf(Save{})

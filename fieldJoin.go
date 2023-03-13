@@ -1,4 +1,4 @@
-package hashsqlite
+package dna
 
 func fieldJoin(fld []field) (string, []int) {
 	var f field

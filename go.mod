@@ -1,4 +1,4 @@
-module github.com/luisfurquim/hashsqlite
+module github.com/luisfurquim/dna
 
 go 1.18
 

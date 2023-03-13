@@ -1,4 +1,4 @@
-package hashsqlite
+package dna
 
 func fieldLen(fld []field) int {
 	var f field

@@ -1,4 +1,4 @@
-package hashsqlite
+package dna
 
 func fieldByName(nm string, fldList []field) (int, bool) {
 	var i int
