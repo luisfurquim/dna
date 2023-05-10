@@ -41,7 +41,7 @@ func (d *Dna) save(row interface{}, visited map[string]struct{}, opt []SaveOptio
 		pk, parms = d.getParmValues(tabName, refRow, func(r interface{}) {})
 	} else {
 		pk, parms = d.getParmValues(tabName, refRow, func(r interface{}) {
-			Goose.Query.Logf(0, "r: %#v", r)
+//			Goose.Query.Logf(0, "r: %#v", r)
 			// recursively save related tables
 			d.save(r, visited, opt)
 		})
