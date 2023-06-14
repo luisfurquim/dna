@@ -33,8 +33,8 @@ func (d *Dna) BindParameter(tabName string, at At, 	stmt *sqlite.Stmt) error {
 //				Goose.Query.Logf(1, "SQL: %s", stmt.SQL())
 				return err
 			}
-		} else {
-			Goose.Query.Logf(1, "bind error %s with %#v on table %s => %s", parmName, parm, tabName, err)
+//		} else {
+//			Goose.Query.Logf(1, "bind error %s with %#v on table %s => %s", parmName, parm, tabName, err)
 		}
 	}
 

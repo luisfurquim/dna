@@ -189,7 +189,7 @@ tableLoop:
 //					} else {
 //						Goose.Init.Logf(0, "fld.name: %s => %s", fld.name, f.Type.Name())
 					}
-				} else if f.Type.Kind() == reflect.Slice {
+				} else if f.Type.Kind() == reflect.Slice && f.Type.Elem().Kind() != reflect.Uint8 {
 //					Goose.Init.Logf(0, "************fld.name: %s => %s", fld.name, f.Type.Name())
 //					Goose.Init.Logf(0, "************fld.name: %s => %s", fld.name, f.Type.Elem().Name())
 //					Goose.Init.Logf(0, "************fld.name: %s => %s", fld.name, f.Type.Elem().Elem().Name())
