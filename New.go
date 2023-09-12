@@ -417,6 +417,7 @@ tableLoop:
 			}
 
 			d.updateBy[tabName] = map[string]*sqlite.Stmt{}
+			Goose.Init.Logf(1,"Update By ID: %s", "UPDATE `" + tabName + "` SET " + fieldJoinNameVal(fldList) + ` WHERE rowid=?`)
 			d.updateBy[tabName]["id"], err = db.Prepare("UPDATE `" + tabName + "` SET " + fieldJoinNameVal(fldList) + ` WHERE rowid=?`)
 			if err != nil {
 				Goose.Init.Logf(1,"Err compiling updateBy: %s", err)
