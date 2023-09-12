@@ -78,6 +78,8 @@ func (d *Dna) save(row interface{}, visited map[string]struct{}, opt []SaveOptio
 		return pk, nil
 	}
 
+	Goose.Query.Logf(1, "Cascading save of %s", tabName)
+
 	for refTabName, fname = range d.tables[tabName].xrefs {
 		if _, ok = visited[refTabName]; ok {
 			continue
