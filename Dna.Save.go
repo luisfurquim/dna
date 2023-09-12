@@ -20,6 +20,7 @@ func (d *Dna) save(row interface{}, visited map[string]struct{}, opt []SaveOptio
 	var noCascade bool
 	var o SaveOption
 
+	Goose.Query.Logf(0, ">>>>>>> opts: %#v", opt)
 	if len(opt) > 0 {
 		for _, o = range opt {
 			if o == NoCascade {
