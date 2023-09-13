@@ -159,6 +159,7 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt
 	// Then the Slices (many rows)
 	pkIndex = *(pkIndexPtr.(*PK));
 	for c, fld = range frows {
+		Goose.Query.Logf(0, "************************************* c=%s, l.joins=%#v", c, l.joins)
 		lst = l.joins[c]
 
 /*
