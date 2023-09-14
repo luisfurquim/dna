@@ -14,7 +14,7 @@ func (d *Dna) DumpSpec(tabName string) string {
 
 	if _, ok = d.list[tabName]; ok {
 		for ruleName, list = range d.list[tabName] {
-			dump += "Rule name: %s\n" + ruleName
+			dump += "Rule name: " + ruleName + "\n"
 			for join, rule = range list.joins {
 				dump += fmt.Sprintf("%d: %#v\n", join, rule)
 			}
