@@ -1,9 +1,5 @@
 package dna
 
-import (
-	"fmt"
-)
-
 func (d *Dna) GetSpec(tabName, ruleName string, join int) string {
 	var ok bool
 
