@@ -299,6 +299,7 @@ func (d *Dna) Find(at At) error {
 			var err error
 
 			row = reflect.New(refRow.Type().Elem().Elem()).Elem() //?
+			Goose.Query.Logf(0, "!!!!!!!!!!!!!!!!!!!!!!! l: %#v", l)
 //			Goose.Query.Logf(1, "row: %#v", row)
 			err = d.nextRow(tabName, l, row, s, at.By, row.Type(), func(r reflect.Value, n int) reflect.Value {
 //				Goose.Query.Logf(1, "r: %#v", r)
