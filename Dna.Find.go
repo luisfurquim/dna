@@ -243,7 +243,7 @@ func (d *Dna) Find(at At) error {
 		return ErrNoTablesFound
 	}
 
-//Goose.Query.Logf(0,"C")
+Goose.Query.Logf(0,"<><><><><><><><><><><><><><><><> tabName:%s, at:%#v", tabName, at)
 
 	if len(at.With) == 0 || at.With == "0" {
 		l, err = d.getList(tabName, "0")
