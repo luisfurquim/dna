@@ -26,7 +26,7 @@ func (d *Dna) getList(tabName, rule string) (l *list, err error) {
 	return
 }
 
-func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt, by map[string]interface{}, typ reflect.Type, getField func(reflect.Value, int) reflect.Value) error {
+func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt, outerBy map[string]interface{}, typ reflect.Type, getField func(reflect.Value, int) reflect.Value) error {
 	var parms []interface{}
 	var i, c int
 	var fld, target reflect.Value
@@ -48,14 +48,17 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt
 	var fkey interface{}
 	var pkIndex PK
 	var pkIndexPtr interface{}
+	var by map[string]interface{}
 
 	parms = make([]interface{}, len(l.cols))
 	fkeys = map[int]interface{}{}
 	frows = map[int]reflect.Value{}
 
-	if by == nil {
-		by = map[string]interface{}{}
+	by = map[string]interface{}{}
+	for k, v := range outerBy {
+		by[k] = v
 	}
+
 
 //	Goose.Query.Logf(0,"====================================================================== l.joins: %#v", l.joins)
 
