@@ -180,6 +180,7 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt
 		}
 
 		Goose.Query.Logf(1, "************************************* d.tables[fkTabName]=%#v", d.tables[fkTabName])
+		Goose.Query.Logf(1, "************************************* d.list[%s]=%#v", fkTabName, d.list[fkTabName])
 
 		if fkTable, ok = d.tables[fkTabName]; !ok {
 			Goose.Query.Logf(1, "Parameter type error: %s", ErrNoTablesFound)
