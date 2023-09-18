@@ -20,11 +20,11 @@ func (d *Dna) save(row interface{}, visited map[string]struct{}, opt []SaveOptio
 	var noCascade bool
 	var o SaveOption
 
-	Goose.Query.Logf(0, ">>>>>>> opts: %#v", opt)
+//	Goose.Query.Logf(0, ">>>>>>> opts: %#v", opt)
 	if len(opt) > 0 {
 		for _, o = range opt {
 			if o == NoCascade {
-				Goose.Query.Logf(0, "NoCascade")
+//				Goose.Query.Logf(0, "NoCascade")
 				noCascade = true
 			}
 		}
@@ -65,7 +65,7 @@ func (d *Dna) save(row interface{}, visited map[string]struct{}, opt []SaveOptio
 	} else {
 		parms = append(parms, pk)
 		err = d.updateBy[tabName]["id"].Exec(parms...)
-		Goose.Query.Logf(1, "Update error %s on %s: %#v", err, tabName, parms)
+//		Goose.Query.Logf(1, "Update error %s on %s: %#v", err, tabName, parms)
 		if err != nil {
 			Goose.Query.Logf(1, "Update error on %s: %s", tabName, err)
 			return 0, err
