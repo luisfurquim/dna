@@ -10,6 +10,8 @@ func (d *Dna) getList(tabName, rule string) (l *list, err error) {
 	var ok bool
 	var r map[string]*list
 
+	Goose.Query.Logf(0, "d.list[%s] %#v", tabName, d.list[tabName])
+
 	if r, ok = d.list[tabName]; !ok {
 		Goose.Query.Logf(1, "Error listing table %s: %s", tabName, ErrNoTablesFound)
 		err = ErrNoTablesFound
