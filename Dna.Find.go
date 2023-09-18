@@ -51,6 +51,7 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt
 	var pkIndex PK
 	var pkIndexPtr interface{}
 	var by map[string]interface{}
+	var l2 *list
 
 	parms = make([]interface{}, len(l.cols))
 	fkeys = map[int]interface{}{}
@@ -146,13 +147,13 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt
 				fld.Set(reflect.New(fld.Type().Elem()))
 			}
 
-			l, err = d.getList(lst.table, lst.rule)
+			l2, err = d.getList(lst.table, lst.rule)
 			if err != nil {
 				return err
 			}
 
 			relatedRow = related.Elem().Index(0)
-			for i, c = range l.cols {
+			for i, c = range l2.cols {
 				fld.Elem().Field(c).Set(relatedRow.Elem().Field(c))
 			}
 
