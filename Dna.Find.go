@@ -10,7 +10,7 @@ func (d *Dna) getList(tabName, rule string) (l *list, err error) {
 	var ok bool
 	var r map[string]*list
 
-	Goose.Query.Logf(0, "d.list[%s] %#v", tabName, d.list[tabName])
+//	Goose.Query.Logf(0, "d.list[%s] %#v", tabName, d.list[tabName])
 
 	if r, ok = d.list[tabName]; !ok {
 		Goose.Query.Logf(1, "Error listing table %s: %s", tabName, ErrNoTablesFound)
@@ -165,7 +165,7 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt
 	// Then the Slices (many rows)
 	pkIndex = *(pkIndexPtr.(*PK));
 	for c, fld = range frows {
-		Goose.Query.Logf(0, "************************************* c=%s, l.joins=%#v", c, l.joins)
+//		Goose.Query.Logf(0, "************************************* c=%s, l.joins=%#v", c, l.joins)
 		lst = l.joins[c]
 
 /*
@@ -251,7 +251,7 @@ func (d *Dna) Find(at At) error {
 		return ErrNoTablesFound
 	}
 
-Goose.Query.Logf(0,"<><><><><><><><><><><><><><><><> tabName:%s, at:%#v", tabName, at)
+//Goose.Query.Logf(0,"<><><><><><><><><><><><><><><><> tabName:%s, at:%#v", tabName, at)
 
 	if len(at.With) == 0 || at.With == "0" {
 		l, err = d.getList(tabName, "0")
@@ -307,7 +307,7 @@ Goose.Query.Logf(0,"<><><><><><><><><><><><><><><><> tabName:%s, at:%#v", tabNam
 			var err error
 
 			row = reflect.New(refRow.Type().Elem().Elem()).Elem() //?
-			Goose.Query.Logf(0, "!!!!!!!!!!!!!!!!!!!!!!! l: %#v", l)
+//			Goose.Query.Logf(0, "!!!!!!!!!!!!!!!!!!!!!!! l: %#v", l)
 //			Goose.Query.Logf(1, "row: %#v", row)
 			err = d.nextRow(tabName, l, row, s, at.By, row.Type(), func(r reflect.Value, n int) reflect.Value {
 //				Goose.Query.Logf(1, "r: %#v", r)
