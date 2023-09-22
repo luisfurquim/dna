@@ -94,7 +94,7 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt
 			}
 		} else {
 			parms[i] = fld.Addr().Interface()
-//			Goose.Query.Logf(1, "Col c: %d, pkIndex: %d", c, d.tables[tabName].pkIndex)
+			Goose.Query.Logf(1, "Col c: %d, pkIndex: %d", c, d.tables[tabName].pkIndex)
 			if c == d.tables[tabName].pkIndex {
 				pkIndexPtr = parms[i]
 			}
