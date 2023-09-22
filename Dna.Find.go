@@ -159,13 +159,13 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt
 			}
 
 			Goose.Query.Logf(1, "-- -")
-			Goose.Query.Logf(1, "related.Elem().Index(0): %#v", related.Elem().Index(0).Interface())
-			Goose.Query.Logf(1, "fld: %#v", fld.Elem().Interface())
+//			Goose.Query.Logf(1, "related.Elem().Index(0): %#v", related.Elem().Index(0).Interface())
+//			Goose.Query.Logf(1, "fld: %#v", fld.Elem().Interface())
 		} else {
 			Goose.Query.Logf(1, "-- 1")
-			Goose.Query.Logf(1, "-- 0 results")
-			Goose.Query.Logf(1, "-- fld: %#v", fld.Interface())
-			fld.Set(reflect.Zero(fld.Type()))
+			Goose.Query.Fatalf(1, "-- 0 results")
+//			Goose.Query.Logf(1, "-- fld: %#v", fld.Interface())
+//			fld.Set(reflect.Zero(fld.Type()))
 		}
 	}
 
