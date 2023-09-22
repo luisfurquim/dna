@@ -161,7 +161,7 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt
 			Goose.Query.Logf(1, "related.Elem().Index(0): %#v", related.Elem().Index(0).Interface())
 			Goose.Query.Logf(1, "fld: %#v", fld.Elem().Interface())
 		} else {
-			Goose.Query.Logf(1, "-- related.Elem(): %#v", related.Elem().Interface())
+			Goose.Query.Logf(1, "-- related: %#v", related.Interface())
 			Goose.Query.Logf(1, "-- fld: %#v", fld.Interface())
 			fld.Set(reflect.Zero(fld.Type()))
 		}
