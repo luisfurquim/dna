@@ -63,7 +63,7 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt
 	}
 
 
-	Goose.Query.Logf(0,"====================================================================== l.joins: %#v", l.joins)
+	Goose.Query.Logf(5,"====================================================================== l.joins: %#v", l.joins)
 
 	// allocate the scan parameters
 	for i, c = range l.cols {
@@ -94,7 +94,7 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt
 			}
 		} else {
 			parms[i] = fld.Addr().Interface()
-			Goose.Query.Logf(1, "Col c: %d, pkIndex: %d", c, d.tables[tabName].pkIndex)
+			Goose.Query.Logf(5, "Col c: %d, pkIndex: %d", c, d.tables[tabName].pkIndex)
 			if c == d.tables[tabName].pkIndex {
 				pkIndexPtr = parms[i]
 			}
@@ -129,10 +129,10 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt
 		related = reflect.New(reflect.SliceOf(fld.Type()))
 		related.Elem().Set(reflect.Append(related.Elem(), fld))
 		by[fldName] = *(fkey.(*PK))
-		Goose.Query.Logf(1, "+++++++ related.Interface(): %#v", related.Interface())
-		Goose.Query.Logf(1, "+++++++ lst: %#v", lst)
-		Goose.Query.Logf(1, "+++++++ c: %d", c)
-		Goose.Query.Logf(1, "+++++++ by=%#v", by)
+		Goose.Query.Logf(5, "+++++++ related.Interface(): %#v", related.Interface())
+		Goose.Query.Logf(5, "+++++++ lst: %#v", lst)
+		Goose.Query.Logf(5, "+++++++ c: %d", c)
+		Goose.Query.Logf(6, "+++++++ by=%#v", by)
 		err = d.Find(At{
 			Table: related.Interface(),
 			With: lst.rule,
@@ -158,12 +158,12 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt
 				fld.Elem().Field(c).Set(relatedRow.Elem().Field(c))
 			}
 
-			Goose.Query.Logf(1, "-- -")
+			Goose.Query.Logf(6, "-- -")
 //			Goose.Query.Logf(1, "related.Elem().Index(0): %#v", related.Elem().Index(0).Interface())
 //			Goose.Query.Logf(1, "fld: %#v", fld.Elem().Interface())
-		} else {
-			Goose.Query.Logf(1, "-- 1")
-			Goose.Query.Fatalf(1, "-- 0 results")
+//		} else {
+//			Goose.Query.Logf(6, "-- 1")
+//			Goose.Query.Logf(6, "-- 0 results")
 //			Goose.Query.Logf(1, "-- fld: %#v", fld.Interface())
 //			fld.Set(reflect.Zero(fld.Type()))
 		}
@@ -189,9 +189,9 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt
 			return ErrNoTablesFound
 		}
 
-		Goose.Query.Logf(1, "************************************* d.tables[fkTabName]=%#v", d.tables[fkTabName])
-		Goose.Query.Logf(1, "************************************* d.list[%s]=%#v", tabName, d.list[tabName])
-		Goose.Query.Logf(1, "************************************* d.list[%s]=%#v", fkTabName, d.list[fkTabName])
+		Goose.Query.Logf(6, "************************************* d.tables[fkTabName]=%#v", d.tables[fkTabName])
+		Goose.Query.Logf(5, "************************************* d.list[%s]=%#v", tabName, d.list[tabName])
+		Goose.Query.Logf(5, "************************************* d.list[%s]=%#v", fkTabName, d.list[fkTabName])
 
 		if fkTable, ok = d.tables[fkTabName]; !ok {
 			Goose.Query.Logf(1, "Parameter type error: %s", ErrNoTablesFound)
@@ -209,15 +209,15 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt
 			return ErrNoTablesFound
 		}
 		
-		Goose.Query.Logf(1, "************************************* by[fkField.name](%s) = pkIndex=%#v", by[fkField.name], pkIndex)
+		Goose.Query.Logf(5, "************************************* by[fkField.name](%s) = pkIndex=%#v", by[fkField.name], pkIndex)
 		by[fkField.name] = pkIndex
 
 
-		Goose.Query.Logf(1, "related.Interface(): %#v", fld.Interface())
-		Goose.Query.Logf(1, "lst.rule: %#v", lst.rule)
-		Goose.Query.Logf(1, "l.joins=%#v", l.joins)
-		Goose.Query.Logf(1, "c=%d", c)
-		Goose.Query.Logf(1, "by=%#v", by)
+		Goose.Query.Logf(5, "related.Interface(): %#v", fld.Interface())
+		Goose.Query.Logf(5, "lst.rule: %#v", lst.rule)
+		Goose.Query.Logf(6, "l.joins=%#v", l.joins)
+		Goose.Query.Logf(5, "c=%d", c)
+		Goose.Query.Logf(6, "by=%#v", by)
 
 
 		err = d.Find(At{
@@ -229,11 +229,11 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt
 			return err
 		}
 
-
+/*
 		for n:=0; n<fld.Elem().Len(); n++ {
 			Goose.Query.Logf(1, "###################################################### resultby=%#v", fld.Elem().Index(n).Elem().Interface())
 		}
-
+*/
 
 	}
 
