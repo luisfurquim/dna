@@ -63,7 +63,7 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt
 	}
 
 
-//	Goose.Query.Logf(0,"====================================================================== l.joins: %#v", l.joins)
+	Goose.Query.Logf(0,"====================================================================== l.joins: %#v", l.joins)
 
 	// allocate the scan parameters
 	for i, c = range l.cols {
@@ -129,9 +129,10 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt
 		related = reflect.New(reflect.SliceOf(fld.Type()))
 		related.Elem().Set(reflect.Append(related.Elem(), fld))
 		by[fldName] = *(fkey.(*PK))
-//		Goose.Query.Logf(1, "related.Interface(): %#v", related.Interface())
-//		Goose.Query.Logf(1, "lst.rule: %#v", lst.rule)
-//		Goose.Query.Logf(1, "by=%#v", by)
+		Goose.Query.Logf(1, "+++++++ related.Interface(): %#v", related.Interface())
+		Goose.Query.Logf(1, "+++++++ lst: %#v", lst)
+		Goose.Query.Logf(1, "+++++++ c: %d", c)
+		Goose.Query.Logf(1, "+++++++ by=%#v", by)
 		err = d.Find(At{
 			Table: related.Interface(),
 			With: lst.rule,

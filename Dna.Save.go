@@ -64,6 +64,7 @@ func (d *Dna) save(row interface{}, visited map[string]struct{}, opt []SaveOptio
 		pk = PK(id)
 	} else {
 		parms = append(parms, pk)
+		Goose.Query.Logf(1, "-=-=-=-=-=-=-=-=-=-=-=-=-=- Update parms on %s: %#v", tabName, parms)
 		err = d.updateBy[tabName]["id"].Exec(parms...)
 //		Goose.Query.Logf(1, "Update error %s on %s: %#v", err, tabName, parms)
 		if err != nil {
