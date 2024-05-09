@@ -287,27 +287,27 @@ tableLoop:
 
 								if len(parts) == 1 {
 									Goose.Init.Logf(1,"Err compiling list %s from %s: %s", rule, tabName, ErrColumnNotFound)
-//									Goose.Init.Logf(1,"tmpList %#v col [%s][%s]", tmpList, spec.cols[j], parts[0])
-//									Goose.Init.Logf(1,"fldList %#v", fldList)
-//									Goose.Init.Logf(1,"pkName %s", pkName)
+									Goose.Init.Logf(1,"tmpList %#v col [%s][%s]", tmpList, spec.cols[j], parts[0])
+									Goose.Init.Logf(1,"fldList %#v", fldList)
+									Goose.Init.Logf(1,"pkName %s", pkName)
 									return nil, ErrColumnNotFound
 								}
 
 								k, ok = fieldByNameFromType(parts[0], reftab)
 								if !ok {
 									Goose.Init.Logf(1,"Err compiling list %s from %s: %s", rule, tabName, ErrColumnNotFound)
-//									Goose.Init.Logf(1,"tmpList %#v col %s", tmpList, spec.cols[j])
-//									Goose.Init.Logf(1,"fldList %#v", fldList)
-//									Goose.Init.Logf(1,"pkName %s", pkName)
+									Goose.Init.Logf(1,"tmpList %#v col %s", tmpList, spec.cols[j])
+									Goose.Init.Logf(1,"fldList %#v", fldList)
+									Goose.Init.Logf(1,"pkName %s", pkName)
 									return nil, ErrColumnNotFound
 								}
 
 								target = reftab.Field(k).Type
 								if target.Kind() != reflect.Slice && target.Elem().Kind() != reflect.Pointer {
 									Goose.Init.Logf(1,"Err compiling list %s from %s: %s", rule, tabName, ErrColumnNotFound)
-//									Goose.Init.Logf(1,"tmpList %#v col %s", tmpList, spec.cols[j])
-//									Goose.Init.Logf(1,"fldList %#v", fldList)
-//									Goose.Init.Logf(1,"pkName %s %#v %d %d", pkName, target, target.Kind(), target.Elem().Kind())
+									Goose.Init.Logf(1,"tmpList %#v col %s", tmpList, spec.cols[j])
+									Goose.Init.Logf(1,"fldList %#v", fldList)
+									Goose.Init.Logf(1,"pkName %s %#v %d %d", pkName, target, target.Kind(), target.Elem().Kind())
 									return nil, ErrColumnNotFound
 								}
 
