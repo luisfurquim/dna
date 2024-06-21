@@ -10,13 +10,7 @@ func (d *Dna) Del(at At) error {
 		return ErrNoTablesFound
 	}
 
-	err = d.BindParameter(tabName, at, d.delete[tabName][at.With])
-	if err != nil {
-		Goose.Query.Logf(1, "Bind parameter error: %s", err)
-		return err
-	}
-
-	err = d.delete[tabName][at.With].Exec()
+	err = d.driver.Delete(tabName, at)
 	if err != nil {
 		Goose.Query.Logf(1, "Delete error on %s: %s", tabName, err)
 		return err

@@ -1,21 +1,20 @@
 package dna
 
 import (
-	"fmt"
 	"strings"
 	"reflect"
 	"unicode"
-	"github.com/gwenn/gosqlite"
 )
 
-func New(db *sqlite.Conn, schema Schema) (*Dna, error) {
+func New(driver Driver, schema Schema) (*Dna, error) {
 	var tab interface{}
 	var reftab reflect.Type
 	var tabName string
 	var f reflect.StructField
-	var fld field
+	var fld FieldSpec
 	var fldName string
-	var fldList []field
+	var fldPrec string
+	var fldList []FieldSpec
 	var ok bool
 	var char rune
 	var i int
@@ -33,13 +32,8 @@ func New(db *sqlite.Conn, schema Schema) (*Dna, error) {
 	var tmpList map[string]listSpec
 	var rule string
 	var spec listSpec
-	var stmt *sqlite.Stmt
 	var cols []int
 	var colNames string
-	var colDef string
-	var sortDef string
-	var limitDef string
-//	var filterLen int
 	var sortSpec string
 	var filterSpec string
 	var limitSpec string
@@ -48,27 +42,21 @@ func New(db *sqlite.Conn, schema Schema) (*Dna, error) {
 	var flds map[int]tabRule
 	var index int
 	var fRule tabRule
-	var pkAdded bool
+//	var pkAdded bool
 	var target reflect.Type
 	var countSpec map[string]string
 	var selector, cspec string
 	var ignore string
+	var stmtSpec *StmtSpec
 
 	if len(schema.Tables) == 0 {
 		Goose.Init.Logf(1,"Error: %s", ErrNoTablesFound)
 		return nil, ErrNoTablesFound
 	}
 
-	d.db		   = db
+	d.driver	  = driver
 	d.tables   = map[string]table{}
-	d.insert   = map[string]*sqlite.Stmt{}
-	d.link     = map[string]*sqlite.Stmt{}
-	d.updateBy = map[string]map[string]*sqlite.Stmt{}
-	d.count    = map[string]map[string]*sqlite.Stmt{}
 	d.list     = map[string]map[string]*list{}
-	d.listBy   = map[string]map[string]*sqlite.Stmt{}
-	d.exists   = map[string]map[string]*sqlite.Stmt{}
-	d.delete   = map[string]map[string]*sqlite.Stmt{}
 
 	allJoins    = map[string]map[string]map[int]tabRule{}
 
@@ -113,7 +101,7 @@ tableLoop1:
 	for _, tab = range schema.Tables {
 		reftab    = reflect.TypeOf(tab)
 		tabName   = reftab.Name()
-		fldList   = make([]field,0,reftab.NumField())
+		fldList   = make([]FieldSpec,0,reftab.NumField())
 		xrefs     = make(map[string]string,8)
 		tmpList   = map[string]listSpec{}
 		countSpec = map[string]string{}
@@ -121,6 +109,7 @@ tableLoop1:
 
 tableLoop:
 		for i=0; i<reftab.NumField(); i++ {
+			fld = FieldSpec{}
 			f = reftab.Field(i)
 			if len(f.Name)==0 {
 				continue
@@ -167,25 +156,32 @@ tableLoop:
 					tmpList[f.Name] = lSpec
 				}
 
-			} else if f.Type == PKType {
-				fld.joinList = false
-				pkName = f.Name
-				pkIndex = i
-
 			} else {
-				fld.joinList = false
-				if fldName, ok = f.Tag.Lookup("field"); ok && len(fldName)>0 {
-					opt = strings.Split(fldName, ",")
-					fld.name = opt[0]
-				} else {
-					fld.name = f.Name
+				if f.Type == PKType {
+					pkName = f.Name
+					pkIndex = i
+					fld.PK = true
 				}
 
-				fld.fk = ""
+				fld.JoinList = false
+				if fldName, ok = f.Tag.Lookup("field"); ok && len(fldName)>0 {
+					opt = strings.Split(fldName, ",")
+					fld.Name = opt[0]
+				} else {
+					fld.Name = f.Name
+				}
+
+				fld.Type = f.Type
+				if fldPrec, ok = f.Tag.Lookup("prec"); ok && len(fldPrec)>0 {
+					fld.Prec = strings.Split(fldPrec, ",")
+				}
+
+				fld.Fk = ""
 				if f.Type.Kind() == reflect.Pointer {
 					if fk, ok = d.tableType[f.Type.Elem().Name()]; ok {
-						fld.fk = fk
-						fld.name = "id_" + fld.name
+						fld.Fk = fk
+						fld.Name = "id_" + fld.Name
+						fld.Type = f.Type.Elem()
 //					} else {
 //						Goose.Init.Logf(0, "fld.name: %s => %s", fld.name, f.Type.Name())
 					}
@@ -194,19 +190,19 @@ tableLoop:
 //					Goose.Init.Logf(0, "************fld.name: %s => %s", fld.name, f.Type.Elem().Name())
 //					Goose.Init.Logf(0, "************fld.name: %s => %s", fld.name, f.Type.Elem().Elem().Name())
 					if xref, ok = d.tableType[f.Type.Elem().Elem().Name()]; ok {
-						xrefs[xref] = fld.name
+						xrefs[xref] = fld.Name
 //					} else {
 //						Goose.Init.Logf(0, "*fld.name: %s => %s", fld.name, f.Type.Name())
 					}
 //					Goose.Init.Logf(0, "............xrefs: %#v", xrefs)
 
-					fld.joinList = true
+					fld.JoinList = true
 //				} else {
 //					Goose.Init.Logf(0, "fld.name: %s => %s", fld.name, f.Type.Name())
 				}
 
-				fld.index = i
-				if !fld.joinList {
+				fld.Index = i
+				if !fld.JoinList {
 					fldList = append(fldList, fld)
 				}
 			}
@@ -228,20 +224,46 @@ tableLoop:
 
 			d.list[tabName] = map[string]*list{}
 
-			colNames, cols = fieldJoin(fldList)
-//			colNames = "`" + strings.Replace(colNames,",","`,`",-1) + "`"
-
-			err = db.Exec(fmt.Sprintf("CREATE TABLE IF NOT EXISTS `%s` (%s)", tabName, colNames))
+			colNames, cols = driver.ColumnSpecs(fldList, pkIndex)
+			err = driver.CreateTable(tabName, fldList)
 			if err != nil {
 				Goose.Init.Logf(1,"Error creating %s table: %s", tabName, err)
-//				Goose.Init.Logf(1,"SQL: %s", fmt.Sprintf("CREATE TABLE IF NOT EXISTS `%s` (%s)", tabName, colNames))
 				return nil, err
 			}
 
-			colNames = "rowid," + colNames
-			cols = append([]int{pkIndex}, cols...)
+			stmtSpec = &StmtSpec{
+				Clause: SelectClause,
+				Table: tabName,
+				Rule: "0",
+			}
 
-			stmt, err = db.Prepare(fmt.Sprintf("SELECT %s FROM `%s` ORDER BY rowid", colNames, tabName))
+			if driver.PKName() != "" {
+				stmtSpec.Columns = []StmtColSpec{StmtColSpec{Column: driver.PKName()}}
+				stmtSpec.Sort = []string{driver.PKName()}
+			} else {
+				stmtSpec.Columns = []StmtColSpec{StmtColSpec{Column: pkName}}
+				stmtSpec.Sort = []string{pkName}
+			}
+
+			err = driver.Prepare(stmtSpec)
+			if err != nil {
+				Goose.Init.Logf(1,"Err compiling list 0 from %s: %s", tabName, err)
+				return nil, err
+			}
+
+			d.list[tabName]["0"] = &list{
+				cols: []int{pkIndex},
+			}
+
+			stmtSpec = &StmtSpec{
+				Clause:    SelectClause,
+				Table:     tabName,
+				Rule:		  "*",
+				Columns:   fld2stmt(fldList),
+				Sort:    []string{pkName},
+			}
+
+			err = driver.Prepare(stmtSpec)
 			if err != nil {
 				Goose.Init.Logf(1,"Err compiling list * from %s: %s", tabName, err)
 //				Goose.Init.Logf(1,"SQL: %s", fmt.Sprintf("SELECT %s FROM `%s` ORDER BY rowid", colNames, tabName))
@@ -251,35 +273,60 @@ tableLoop:
 			d.list[tabName]["*"] = &list{
 //				tabName: tabName,
 				cols: cols,
-				stmt: stmt,
+			}
+
+			for i=0; i<len(fldList); i++ {
+				if fldList[i].PK {
+					break
+				}
+			}
+
+			// If there is no private key in the list and the database has a special name for the id of a row
+			if i>=len(fldList) && driver.PKName() != "" {
+				stmtSpec.Columns = append(stmtSpec.Columns, StmtColSpec{Column: driver.PKName()})
+				stmtSpec.Filter = driver.PKName() + "==<-" + driver.PKName()
+				stmtSpec.Rule = "id:*"
+				err = driver.Prepare(stmtSpec)
+				if err != nil {
+					Goose.Init.Logf(1,"Err compiling select pk from %s: %s", tabName, err)
+	//				Goose.Init.Logf(1,"SQL: %s", fmt.Sprintf("SELECT rowid," + colNames + " FROM `%s` WHERE rowid=:rowid",  tabName))
+					return nil, err
+				}
+
+				d.list[tabName]["id:*"] = &list{
+					cols: append([]int{pkIndex},cols...),
+				}
 			}
 
 			if len(tmpList) > 0 {
+				stmtSpec = &StmtSpec{
+					Clause: SelectClause,
+					Table: tabName,
+				}
+
 				for rule, spec = range tmpList {
 					cols = make([]int, len(spec.cols))
-					colDef = ""
-					pkAdded = false
+//					pkAdded = false
+					stmtSpec.Columns = []StmtColSpec{}
 					for j=0; j<len(spec.cols); j++ {
 						fRule = tabRule{}
 						parts = strings.Split(spec.cols[j], ":")
 
-						if parts[0] == pkName || parts[0] == "rowid" {
+						if parts[0] == pkName || parts[0] == driver.PKName() {
 							cols[j] = pkIndex
-							if len(colDef) > 0 {
-								colDef += ","
+							if driver.PKName() != "" {
+								stmtSpec.Columns = append(stmtSpec.Columns, StmtColSpec{Column: driver.PKName()})
+							} else {
+								stmtSpec.Columns = append(stmtSpec.Columns, StmtColSpec{Column: parts[0]})
 							}
-							colDef += "rowid"
 							k = pkIndex
-							pkAdded = true
+//							pkAdded = true
 
 						} else {
 							k, ok = fieldByName(parts[0], fldList)
 							if ok {
 								cols[j] = k
-								if len(colDef) > 0 {
-									colDef += ","
-								}
-								colDef += parts[0]
+								stmtSpec.Columns = append(stmtSpec.Columns, StmtColSpec{Column: parts[0]})
 								if len(parts) > 1 {
 									fRule.table = d.tableType[reftab.Field(k).Type.Elem().Name()]
 								}
@@ -312,10 +359,14 @@ tableLoop:
 								}
 
 								cols[j] = pkIndex
-								if len(colDef) > 0 {
-									colDef += ","
-								}
-								colDef += "rowid"
+
+/*
+//								if driver.PKName() != "" {
+//									stmtSpec.Columns = append(stmtSpec.Columns, StmtColSpec{Column: driver.PKName()})
+//								} else {
+									stmtSpec.Columns = append(stmtSpec.Columns, StmtColSpec{Column: parts[0]})
+//								}
+*/
 
 								fRule.table	= d.tableType[reftab.Field(k).Type.Elem().Name()]
 								fRule.targetName  = parts[0]
@@ -334,37 +385,45 @@ tableLoop:
 						}
 					}
 
-					sortDef=""
+					stmtSpec.Sort    = nil
+					stmtSpec.SortDir = nil
+
 					for j=0; j<len(spec.sort); j++ {
-						if len(sortDef) > 0 {
-							sortDef += ","
-						}
 						if spec.sort[j][0] == '>' {
-							sortDef += spec.sort[j][1:] + " DESC"
+							stmtSpec.Sort = append(stmtSpec.Sort, spec.sort[j][1:])
+							stmtSpec.SortDir = append(stmtSpec.SortDir, ">")
 						} else {
-							sortDef += spec.sort[j]
+							stmtSpec.Sort = append(stmtSpec.Sort, spec.sort[j])
+							stmtSpec.SortDir = append(stmtSpec.SortDir, "<")
 						}
-					}
-					if len(sortDef) > 0 {
-						sortDef = " ORDER BY " + sortDef
 					}
 
 					if len(spec.filter) > 0 {
-						spec.filter = " WHERE " + spec.filter
+						stmtSpec.Filter = spec.filter
+					} else {
+						stmtSpec.Filter = ""
 					}
 
 					if len(spec.limit) > 0 {
-						limitDef = " LIMIT " + spec.limit
+						stmtSpec.Limit = spec.limit
 					} else {
-						limitDef = ""
+						stmtSpec.Limit = ""
 					}
 
+/*
 					if !pkAdded {
 						cols = append(cols, pkIndex)
-						colDef += ",rowid"
+						if driver.PKName() != "" {
+							stmtSpec.Columns = append(stmtSpec.Columns, StmtColSpec{Column: driver.PKName()})
+						} else {
+							stmtSpec.Columns = append(stmtSpec.Columns, StmtColSpec{Column: pkName})
+						}
 					}
+*/
 
-					stmt, err = db.Prepare(fmt.Sprintf("SELECT %s FROM `%s`%s%s%s", colDef, tabName, spec.filter, sortDef, limitDef))
+					stmtSpec.Rule = rule
+
+					err = driver.Prepare(stmtSpec)
 					if err != nil {
 						Goose.Init.Logf(1,"Err compiling list %s from %s: %s", rule, tabName, err)
 //						Goose.Init.Logf(1,"tmpList %#v", tmpList)
@@ -377,88 +436,86 @@ tableLoop:
 //						tabName: tabName,
 						cols: cols,
 //						filterLen: filterLen,
-						stmt: stmt,
+//						stmt: stmt,
 					}
 				}
 			}
 
-			stmt, err = db.Prepare(fmt.Sprintf("SELECT rowid FROM `%s` ORDER BY rowid",  tabName))
-			if err != nil {
-				Goose.Init.Logf(1,"Err compiling list 0 from %s: %s", tabName, err)
-				return nil, err
+			stmtSpec = &StmtSpec{
+				Clause: InsertClause,
+				Table: tabName,
+				Rule: "*",
 			}
 
-			d.list[tabName]["0"] = &list{
-//					tabName: tabName,
-				cols: []int{pkIndex},
-				stmt: stmt,
+			for i=0; i<len(fldList); i++ {
+				if fldList[i].PK {
+					continue
+				}
+				stmtSpec.Columns = append(stmtSpec.Columns, StmtColSpec{
+					Column: fldList[i].Name,
+					Value:  fldList[i].Name,
+					Type:   VarColType,
+				})
 			}
 
-			colNames, cols = fieldJoin(fldList)
-//			colNames = "`" + strings.Replace(colNames,",","`,`",-1) + "`"
-			stmt, err = db.Prepare(fmt.Sprintf("SELECT rowid," + colNames + " FROM `%s` WHERE rowid=:rowid",  tabName))
-			if err != nil {
-				Goose.Init.Logf(1,"Err compiling select pk from %s: %s", tabName, err)
-//				Goose.Init.Logf(1,"SQL: %s", fmt.Sprintf("SELECT rowid," + colNames + " FROM `%s` WHERE rowid=:rowid",  tabName))
-				return nil, err
-			}
-
-			d.list[tabName]["id:*"] = &list{
-//					tabName: tabName,
-				cols: append([]int{pkIndex},cols...),
-				stmt: stmt,
-			}
-
-			Goose.Init.Logf(0,`INSERT INTO ` + tabName + ` VALUES (?` + strings.Repeat(",?",fieldLen(fldList)-1) + `)`)
-			d.insert[tabName], err = db.Prepare("INSERT INTO `" + tabName + "` VALUES (?" + strings.Repeat(",?",fieldLen(fldList)-1) + `)`)
+			err = driver.Prepare(stmtSpec)
 			if err != nil {
 				Goose.Init.Logf(1,"Err compiling insert: %s (%#v)", err, fldList)
 				return nil, err
 			}
 
-			d.updateBy[tabName] = map[string]*sqlite.Stmt{}
-			Goose.Init.Logf(1,"Update By ID: %s", "UPDATE `" + tabName + "` SET " + fieldJoinNameVal(fldList) + ` WHERE rowid=?`)
-			d.updateBy[tabName]["id"], err = db.Prepare("UPDATE `" + tabName + "` SET " + fieldJoinNameVal(fldList) + ` WHERE rowid=?`)
+			stmtSpec.Clause = UpdateClause
+			stmtSpec.Rule = "id"
+			stmtSpec.Filter = pkName + "==<-" + pkName
+
+			err = driver.Prepare(stmtSpec)
 			if err != nil {
 				Goose.Init.Logf(1,"Err compiling updateBy: %s", err)
 				return nil, err
 			}
 
-			d.count[tabName] = map[string]*sqlite.Stmt{}
-			d.count[tabName]["0"], err = db.Prepare("SELECT count(rowid) FROM `" + tabName + "`")
+			stmtSpec = &StmtSpec{
+				Clause: SelectClause,
+				Table: tabName,
+				Rule: "#",
+				Columns: []StmtColSpec{StmtColSpec{Column: pkName}},
+				ColFunc: map[int]string{0:"count"},
+			}
+
+			err = driver.Prepare(stmtSpec)
 			if err != nil {
 				Goose.Init.Logf(1,"Err compiling count: %s", err)
 				return nil, err
 			}
 
+			stmtSpec.Rule = "@!"
+			stmtSpec.Filter = pkName + "==<-" + pkName
+
+			err = driver.Prepare(stmtSpec)
+			if err != nil {
+				Goose.Init.Logf(1,"Err compiling exists: %s", err)
+				return nil, err
+			}
+
 			for selector, cspec = range countSpec {
-				d.count[tabName][selector], err = db.Prepare("SELECT count(*) FROM `" + tabName + "` WHERE " + cspec)
-//				Goose.Init.Fatalf(0,"SELECT count(rowid) FROM `" + tabName + "` WHERE " + cspec)
+				stmtSpec.Rule = selector
+				stmtSpec.Filter = cspec
+
+				err = driver.Prepare(stmtSpec)
 				if err != nil {
 					Goose.Init.Logf(1,"Err compiling count: %s", err)
 					return nil, err
 				}
 			}
 
-/*
-			d.list[tabName], err = db.Prepare(`SELECT . FROM ` + tabName)
-			if err != nil {
-				Goose.Init.Logf(1,"Err compiling count: %s", err)
-				return nil, err
+			stmtSpec = &StmtSpec{
+				Clause: DeleteClause,
+				Table: tabName,
+				Rule: "id",
+				Filter: pkName + "==<-" + pkName,
 			}
 
-			d.listBy[tabName] = map[string]*sqlite.Stmt{}
-*/
-
-			d.exists[tabName] = map[string]*sqlite.Stmt{}
-			d.exists[tabName]["id"], err = db.Prepare("SELECT count(rowid) FROM `" + tabName + "` WHERE rowid=:rowid")
-			if err != nil {
-				Goose.Init.Logf(1,"Err compiling exists: %s", err)
-				return nil, err
-			}
-
-			d.delete[tabName] = map[string]*sqlite.Stmt{}
-			d.delete[tabName]["id"], err = db.Prepare("DELETE FROM `" + tabName + "` WHERE rowid=:rowid")
+			err = driver.Prepare(stmtSpec)
 			if err != nil {
 				Goose.Init.Logf(1,"Err compiling delete: %s", err)
 				return nil, err
@@ -473,43 +530,94 @@ tableLoop:
 				continue
 			}
 
-			if _, ok = d.link[refTable + "_" + tabName]; ok {
+			if driver.Exists(refTable + "_" + tabName) {
 				continue
 			}
 
-			err = db.Exec(fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s_%s (id_%s, id_%s)`, tabName, refTable, tabName, refTable))
+			err = driver.CreateTable(tabName + "_" + refTable, []FieldSpec{
+				FieldSpec{
+					Name: "id_" + tabName,
+					Type: PKType,
+				},
+				FieldSpec{
+					Name: "id_" + refTable,
+					Type: PKType,
+				},
+			})
 			if err != nil {
 				Goose.Init.Logf(1,"Error creating %s table: %s", tabName, err)
 				return nil, err
 			}
 
-			d.link[tabName + "_" + refTable], err = db.Prepare(fmt.Sprintf(`INSERT INTO %s_%s VALUES (?,?)`, tabName, refTable))
+			stmtSpec = &StmtSpec{
+				Clause: InsertClause,
+				Table: tabName + "_" + refTable,
+				Rule: "*",
+				Columns: []StmtColSpec{
+					StmtColSpec{
+						Column: "id_" + tabName,
+						Value:  "id_" + tabName,
+						Type:   VarColType,
+					},
+					StmtColSpec{
+						Column: "id_" + refTable,
+						Value:  "id_" + refTable,
+						Type:   VarColType,
+					},
+				},
+			}
+
+			err = driver.Prepare(stmtSpec)
 			if err != nil {
 				Goose.Init.Logf(1,"Err compiling link: %s", err)
 				return nil, err
 			}
 
-			d.unlink[tabName + "_" + refTable], err = db.Prepare(fmt.Sprintf(`DELETE FROM %s_%s WHERE id_%s=? AND id_%s?`, tabName, refTable, tabName, refTable))
+			stmtSpec.Clause = DeleteClause
+			stmtSpec.Rule = "id"
+			stmtSpec.Columns = nil
+			stmtSpec.Filter = "id_" + tabName + "==<-id_" + tabName + " && id_" + refTable + "==<-id_" + refTable 
+
+			err = driver.Prepare(stmtSpec)
 			if err != nil {
 				Goose.Init.Logf(1,"Err compiling unlink: %s", err)
 				return nil, err
 			}
 
-			if len(d.listJoin[tabName]) == 0 {
-				d.listJoin[tabName] = map[string]*sqlite.Stmt{}
+			stmtSpec = &StmtSpec{
+				Clause: SelectClause,
+				Table: tabName + "_" + refTable,
+				Rule: "join",
+				Columns: []StmtColSpec{
+					StmtColSpec{
+						Column: "id_" + refTable,
+					},
+				},
+				Filter: "id_" + tabName + "==<-id_" + tabName,
 			}
-			d.listJoin[tabName][refTable], err = db.Prepare(fmt.Sprintf(`SELECT id_%s FROM %s_%s WHERE id_%s=? `, refTable, tabName, refTable, tabName))
+
+			err = driver.Prepare(stmtSpec)
 			if err != nil {
-				Goose.Init.Logf(1,"Err compiling exists: %s", err)
+				Goose.Init.Logf(1,"Err compiling join: %s", err)
 				return nil, err
 			}
 
-			if len(d.listJoin[refTable]) == 0 {
-				d.listJoin[refTable] = map[string]*sqlite.Stmt{}
+			stmtSpec = &StmtSpec{
+				Clause: SelectClause,
+				Table: refTable + "_" + tabName,
+				Rule: "join",
+				Columns: []StmtColSpec{
+					StmtColSpec{
+						Column: "id_" + tabName,
+					},
+				},
+				Filter: "id_" + refTable + "==<-id_" + refTable,
 			}
-			d.listJoin[refTable][tabName], err = db.Prepare(fmt.Sprintf(`SELECT id_%s FROM %s_%s WHERE id_%s=? `, tabName, tabName, refTable, refTable))
+
+
+			err = driver.Prepare(stmtSpec)
 			if err != nil {
-				Goose.Init.Logf(1,"Err compiling exists: %s", err)
+				Goose.Init.Logf(1,"Err compiling join: %s", err)
 				return nil, err
 			}
 

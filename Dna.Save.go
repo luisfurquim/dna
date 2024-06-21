@@ -5,7 +5,6 @@ import (
 )
 
 func (d *Dna) save(row interface{}, visited map[string]struct{}, opt []SaveOption) (PK, error) {
-	var id int64
 	var i, j int
 	var pk PK
 	var tabName string
@@ -53,19 +52,18 @@ func (d *Dna) save(row interface{}, visited map[string]struct{}, opt []SaveOptio
 
 	if pk==0 {
 //		Goose.Query.Logf(0, "d.insert:%#v, tabName: %s", d.insert, tabName)
-		id, err = d.insert[tabName].Insert(parms...)
+		pk, err = d.driver.Insert(tabName, parms...)
 		if err != nil {
 			Goose.Query.Logf(1, "Insert error on %s: %s", tabName, err)
 			return 0, err
 		}
 		if d.tables[tabName].pkName != "" {
-			refRow.Field(d.tables[tabName].pkIndex).SetInt(id)
+			refRow.Field(d.tables[tabName].pkIndex).SetInt(int64(pk))
 		}
-		pk = PK(id)
 	} else {
 		parms = append(parms, pk)
 		Goose.Query.Logf(5, "-=-=-=-=-=-=-=-=-=-=-=-=-=- Update parms on %s: %#v", tabName, parms)
-		err = d.updateBy[tabName]["id"].Exec(parms...)
+		err = d.driver.Update(tabName, parms...)
 //		Goose.Query.Logf(1, "Update error %s on %s: %#v", err, tabName, parms)
 		if err != nil {
 			Goose.Query.Logf(1, "Update error on %s: %s", tabName, err)

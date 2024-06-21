@@ -1,11 +1,12 @@
-package dna
+package dnasqlite
 
 import (
 	"fmt"
    "github.com/gwenn/gosqlite"
+   "github.com/luisfurquim/dna"
 )
 
-func (d *Dna) BindParameter(tabName string, at At, 	stmt *sqlite.Stmt) error {
+func (drv *Driver) BindParameter(tabName string, at dna.At, stmt *sqlite.Stmt) error {
 	var index int
 	var parmName string
 	var parm interface{}
@@ -19,7 +20,7 @@ func (d *Dna) BindParameter(tabName string, at At, 	stmt *sqlite.Stmt) error {
 			err = stmt.BindByIndex(index, parm)
 //			Goose.Query.Logf(1, "bound %s (%d) with %#v: %s", parmName, index, parm, err)
 			if fmt.Sprintf("%s", err) == "bad parameter or other API misuse (Stmt.Bind) (bad parameter or other API misuse)" {
-				s, err = d.db.Prepare(stmt.SQL())
+				s, err = drv.db.Prepare(stmt.SQL())
 				if err == nil {
 					*stmt = *s
 					err = stmt.BindByIndex(index, parm)

@@ -3,7 +3,6 @@ package dna
 import (
 	"errors"
 	"reflect"
-   "github.com/gwenn/gosqlite"
    "github.com/luisfurquim/goose"
 )
 
@@ -11,6 +10,21 @@ type SaveOption byte
 
 const(
 	NoCascade SaveOption = iota
+)
+
+type Clause byte
+const (
+	SelectClause Clause = iota
+	InsertClause
+	UpdateClause
+	DeleteClause
+)
+
+type ColType byte
+const (
+	VarColType ColType = iota
+	StringColType
+	OtherColType
 )
 
 type TableName struct{}
@@ -33,17 +47,21 @@ type Schema struct {
 
 type table struct {
 	name string
-	fields []field
+	fields []FieldSpec
 	xrefs map[string]string
 	pkName string
 	pkIndex int
 }
 
-type field struct {
-	name string
-	fk string
-	joinList bool
-	index int
+type FieldSpec struct {
+	Name string
+	Fk string
+	JoinList bool
+	Index int
+	Type reflect.Type
+	Prec []string
+	PK   bool
+	Auto bool
 }
 
 type tabRule struct {
@@ -57,7 +75,7 @@ type tabRule struct {
 type list struct {
 	cols []int
 	joins map[int]tabRule
-	stmt *sqlite.Stmt
+//	stmt *sqlite.Stmt
 }
 
 type listSpec struct {
@@ -71,21 +89,49 @@ type listSpec struct {
 type Dna struct {
 	tables map[string]table
 	tableType map[string]string
-
-	db *sqlite.Conn
-
 	list map[string]map[string]*list
+	driver Driver
+}
 
-	insert map[string]*sqlite.Stmt
-	link map[string]*sqlite.Stmt
-	unlink map[string]*sqlite.Stmt
-	updateBy map[string]map[string]*sqlite.Stmt
-	count map[string]map[string]*sqlite.Stmt
-	listJoin map[string]map[string]*sqlite.Stmt
-	listBy map[string]map[string]*sqlite.Stmt
-	exists map[string]map[string]*sqlite.Stmt
-	delete map[string]map[string]*sqlite.Stmt
+type Driver interface {
+	// If the database has a special name for PK columns, it must return this name.
+	// Otherwise it must return empty string ("").
+	PKName() string
+	Close() error
+	ColumnSpecs(fldList []FieldSpec, pkIndex int) 	(colNames string, cols []int)
+	CreateTable(tabName string, columns []FieldSpec) error
+	Prepare(stmt *StmtSpec) error
+	Select(tabName string, at At, callback func(Scanner) error) error
+	Insert(tabName string, parms ...interface{}) (PK, error)
+	Update(tabName string, parms ...interface{}) error
+	Delete(tabName string, at At) error
+	Exists(tabName string) bool
+}
 
+type Scanner interface{
+	Scan(parameters ...interface{}) error
+}
+
+type StmtColSpec struct{
+	Column  string
+	Value   string
+	Type    ColType
+}
+
+type StmtSpec struct{
+	Clause           	 Clause
+	Table           	 string
+	Rule				 	 string
+	Columns          []StmtColSpec
+	Aliases    map[int]string
+	ColFunc    map[int]string
+	Sort             []string
+	SortDir          []string
+	Filter             string
+	FilterFunc map[int]string
+	Group            []string
+	GroupFunc  map[int]string
+	Limit              string
 }
 
 type GooseG struct {

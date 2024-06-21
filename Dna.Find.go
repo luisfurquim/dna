@@ -1,9 +1,9 @@
 package dna
 
 import (
+	"io"
 	"strings"
 	"reflect"
-   "github.com/gwenn/gosqlite"
 )
 
 func (d *Dna) getList(tabName, rule string) (l *list, err error) {
@@ -28,7 +28,7 @@ func (d *Dna) getList(tabName, rule string) (l *list, err error) {
 	return
 }
 
-func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt, outerBy map[string]interface{}, typ reflect.Type, getField func(reflect.Value, int) reflect.Value) error {
+func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s Scanner, outerBy map[string]interface{}, typ reflect.Type, getField func(reflect.Value, int) reflect.Value) error {
 	var parms []interface{}
 	var i, c int
 	var fld, target reflect.Value
@@ -38,7 +38,7 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt
 //	var fkList *list
 	var lst tabRule
 //	var fkrule tabRule
-	var fkField field
+	var fkField FieldSpec
 	var tName string
 	var err error
 	var related reflect.Value
@@ -101,12 +101,28 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt
 		}
 	}
 
+/*
+	for n, p := range parms {
+		Goose.Query.Logf(0,"####################### before scan: %d->%#v", n, reflect.ValueOf(p).Elem().Interface())
+	}
+*/
+
 	// Scan the current table (but not the joined ones...)
+//	Goose.Query.Logf(0,"going scan: %#v", parms)
 	err = s.Scan(parms...)
 	if err != nil {
-		Goose.Query.Logf(1, "Error scanning on list of table %s: %s", tabName, err)
+//		Goose.Query.Logf(0,"err != nil")
+		if err != io.EOF {
+			Goose.Query.Logf(0, "Error scanning on list of table %s: %s", tabName, err)
+		}
 		return err
 	}
+
+/*
+	for n, p := range parms {
+		Goose.Query.Logf(0,"####################### scanned data: %d->%#v", n, reflect.ValueOf(p).Elem().Interface())
+	}
+*/
 
 	// Now we scan the joined tables
 
@@ -129,7 +145,7 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt
 		related = reflect.New(reflect.SliceOf(fld.Type()))
 		related.Elem().Set(reflect.Append(related.Elem(), fld))
 		by[fldName] = *(fkey.(*PK))
-		Goose.Query.Logf(5, "+++++++ related.Interface(): %#v", related.Interface())
+		Goose.Query.Logf(5, "+++++++ related.Interface(): %#v", related.Elem().Interface())
 		Goose.Query.Logf(5, "+++++++ lst: %#v", lst)
 		Goose.Query.Logf(5, "+++++++ c: %d", c)
 		Goose.Query.Logf(6, "+++++++ by=%#v", by)
@@ -199,18 +215,18 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s *sqlite.Stmt
 		}
 
 		for _, fkField = range fkTable.fields {
-			if fkField.fk == tabName {
+			if fkField.Fk == tabName {
 				break
 			}
 		}
 
-		if fkField.fk != tabName {
+		if fkField.Fk != tabName {
 			Goose.Query.Logf(1, "Parameter type error: %s", ErrNoTablesFound)
 			return ErrNoTablesFound
 		}
 		
-		Goose.Query.Logf(5, "************************************* by[fkField.name](%s) = pkIndex=%#v", by[fkField.name], pkIndex)
-		by[fkField.name] = pkIndex
+		by[fkField.Name] = pkIndex
+		Goose.Query.Logf(5, "************************************* by[fkField.name](%s) = pkIndex=%#v", by[fkField.Name], pkIndex)
 
 
 		Goose.Query.Logf(5, "related.Interface(): %#v", fld.Interface())
@@ -270,18 +286,18 @@ func (d *Dna) Find(at At) error {
 	}
 
 //Goose.Query.Logf(0,"D")
-	
+/*
 	err = d.BindParameter(tabName, at, l.stmt)
 	if err != nil {
 		Goose.Query.Logf(1, "Bind parameter error: %s", err)
 		return err
 	}
-
+*/
 //Goose.Query.Logf(0,"E")
 
 	if isChan {
 		go func() {
-			err = l.stmt.Select(func(s *sqlite.Stmt) error {
+			err = d.driver.Select(tabName, at, func(s Scanner) error {
 				var row reflect.Value
 				var err error
 
@@ -309,7 +325,7 @@ func (d *Dna) Find(at At) error {
 //Goose.Query.Logf(0,"F")
 		refRow.Set(reflect.MakeSlice(refRow.Type(), 0, 16))
 //Goose.Query.Logf(0,"G")
-		err = l.stmt.Select(func(s *sqlite.Stmt) error {
+		err = d.driver.Select(tabName, at, func(s Scanner) error {
 			var row reflect.Value
 			var err error
 
@@ -317,7 +333,7 @@ func (d *Dna) Find(at At) error {
 //			Goose.Query.Logf(0, "!!!!!!!!!!!!!!!!!!!!!!! l: %#v", l)
 //			Goose.Query.Logf(1, "row: %#v", row)
 			err = d.nextRow(tabName, l, row, s, at.By, row.Type(), func(r reflect.Value, n int) reflect.Value {
-//				Goose.Query.Logf(1, "r: %#v", r)
+//				Goose.Query.Logf(1, "FN r: %#v", r)
 				return r.Field(n)
 			})
 

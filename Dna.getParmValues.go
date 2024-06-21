@@ -5,7 +5,7 @@ import (
 )
 
 func (d *Dna) getParmValues(tabName string, refRow reflect.Value, recursive func(row interface{})) (PK, []interface{}) {
-	var fld field
+	var fld FieldSpec
 	var parms []interface{}
 	var fk reflect.Value
 	var id PK
@@ -13,16 +13,16 @@ func (d *Dna) getParmValues(tabName string, refRow reflect.Value, recursive func
 	parms = make([]interface{}, 0, len(d.tables[tabName].fields))
 	for _, fld = range d.tables[tabName].fields {
 //		Goose.Query.Logf(0, "fld:%#v", fld)
-		if fld.joinList { //aqui
-			fk = refRow.Field(fld.index)
+		if fld.JoinList { //aqui
+			fk = refRow.Field(fld.Index)
 			if isNonEmptySlice(fk) {
 			}
 			continue
 		}
 
-		if fld.fk != "" {
+		if fld.Fk != "" {
 //			Goose.Query.Logf(0, "fld.fk:%#v", fld.fk)
-			fk = refRow.Field(fld.index)
+			fk = refRow.Field(fld.Index)
 //			Goose.Query.Logf(0, "fk:%#v", fk)
 			if !fk.IsValid() || fk.IsNil() || fk.IsZero() {
 //				Goose.Query.Logf(0, "!valid")
@@ -34,12 +34,14 @@ func (d *Dna) getParmValues(tabName string, refRow reflect.Value, recursive func
 					recursive(fk.Interface())
 				}
 				
-				fk = fk.Elem().Field(d.tables[fld.fk].pkIndex)
+				fk = fk.Elem().Field(d.tables[fld.Fk].pkIndex)
 //				Goose.Query.Logf(0, "++fk:%#v", fk)
 				parms = append(parms, fk.Interface())
 			}
 		} else {
-			parms = append(parms, refRow.Field(fld.index).Interface())
+			if !fld.PK {
+				parms = append(parms, refRow.Field(fld.Index).Interface())
+			}
 //			Goose.Query.Logf(0, "parms:%#v", parms)
 		}
 	}
