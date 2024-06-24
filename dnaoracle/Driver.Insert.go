@@ -11,7 +11,7 @@ func (drv *Driver) Insert(tabName string, parms ...interface{}) (dna.PK, error) 
 	var id int64
 //	var res driver.Result
 	var err error
-	var stmt *go_ora.Stmt
+	var stmt *Stmt
 	var ok bool
 	var i int
 	var namedArgs []driver.NamedValue

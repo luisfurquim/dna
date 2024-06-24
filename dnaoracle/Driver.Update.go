@@ -9,7 +9,7 @@ import (
 
 func (drv *Driver) Update(tabName string, parms ...interface{}) error {
 	var err error
-	var stmt *go_ora.Stmt
+	var stmt *Stmt
 	var ok bool
 	var i int
 	var namedArgs []driver.NamedValue
