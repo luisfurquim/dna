@@ -10,7 +10,7 @@ import (
 
 func (drv *Driver) Select(tabName string, at dna.At, fn func(dna.Scanner) error) error {
 	var err error
-	var stmt *go_ora.Stmt
+	var stmt *Stmt
 	var ok bool
 	var rows driver.Rows
 	var namedArgs []driver.NamedValue
