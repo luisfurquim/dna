@@ -12,7 +12,7 @@ func (d *Dna) getParmValues(tabName string, refRow reflect.Value, recursive func
 
 	parms = make([]interface{}, 0, len(d.tables[tabName].fields))
 	for _, fld = range d.tables[tabName].fields {
-		Goose.Query.Logf(5, "fld:%#v", fld)
+		Goose.Query.Logf(6, "fld:%#v", fld)
 		if fld.JoinList { //aqui
 			fk = refRow.Field(fld.Index)
 			if isNonEmptySlice(fk) {
@@ -42,9 +42,11 @@ func (d *Dna) getParmValues(tabName string, refRow reflect.Value, recursive func
 			if !fld.PK {
 				parms = append(parms, refRow.Field(fld.Index).Interface())
 			}
-			Goose.Query.Logf(5, "parms:%#v", parms)
+			Goose.Query.Logf(6, "parms:%#v", parms)
 		}
 	}
+
+	Goose.Query.Logf(5, "parms:%#v", parms)
 
 	if d.tables[tabName].pkName != "" {
 		id = refRow.Field(d.tables[tabName].pkIndex).Interface().(PK)
