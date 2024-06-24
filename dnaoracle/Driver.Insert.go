@@ -1,7 +1,7 @@
 package dnaoracle
 
 import (
-	"context"
+//	"context"
 	"database/sql/driver"
    "github.com/sijms/go-ora/v2"
 	"github.com/luisfurquim/dna"
