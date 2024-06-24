@@ -21,7 +21,7 @@ func (d *Dna) getParmValues(tabName string, refRow reflect.Value, recursive func
 		}
 
 		if fld.Fk != "" {
-			Goose.Query.Logf(5, "fld.fk:%#v", fld.fk)
+			Goose.Query.Logf(5, "fld.fk:%#v", fld.Fk)
 			fk = refRow.Field(fld.Index)
 			Goose.Query.Logf(5, "fk:%#v", fk)
 			if !fk.IsValid() || fk.IsNil() || fk.IsZero() {
