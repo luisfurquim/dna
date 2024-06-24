@@ -51,7 +51,7 @@ func (d *Dna) save(row interface{}, visited map[string]struct{}, opt []SaveOptio
 //	Goose.Query.Logf(0, "id:%d, parms: %#v", id, parms)
 
 	if pk==0 {
-		Goose.Query.Logf(5, "d.insert:%#v, tabName: %s", d.insert, tabName)
+		Goose.Query.Logf(5, "insert tabName: %s, parms: :%#v", tabName, parms)
 		pk, err = d.driver.Insert(tabName, parms...)
 		Goose.Query.Logf(5, "pk = %d", pk)
 		if err != nil {
