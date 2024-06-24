@@ -14,7 +14,7 @@ func (drv *Driver) Insert(tabName string, parms ...interface{}) (dna.PK, error) 
 	var stmt *go_ora.Stmt
 	var ok bool
 	var i int
-	var namedArgs []driver.NamedValue
+	var namedArgs []driver.Value
 	var b bool
 	var parm interface{}
 
@@ -28,7 +28,7 @@ func (drv *Driver) Insert(tabName string, parms ...interface{}) (dna.PK, error) 
 		return 0, ErrNoStmtForRule
 	}
 
-	namedArgs = make([]driver.NamedValue,len(parms))
+	namedArgs = make([]driver.Value,len(parms))
 	for i, parm = range parms {
 		if b, ok = parm.(bool); ok {
 			if b {
@@ -36,19 +36,11 @@ func (drv *Driver) Insert(tabName string, parms ...interface{}) (dna.PK, error) 
 			} else {
 				parm = "F"
 			}
-			namedArgs[i] = driver.NamedValue{
-				Ordinal: i,
-				Value: parm,
-			}
-		} else {
-			namedArgs[i] = driver.NamedValue{
-				Ordinal: i,
-				Value: parms[i],
-			}
 		}
+		namedArgs[i] = driver.Value(parm)
 	}
 	
-	res, err = stmt.ExecContext(context.Background(), namedArgs)
+	res, err = stmt.Exec(namedArgs)
 	if err != nil {
 		Goose.Query.Logf(1,"Error executing insert on table %s: %s", tabName, err)
 		return 0, err
