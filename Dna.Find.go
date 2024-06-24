@@ -63,7 +63,7 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s Scanner, out
 	}
 
 
-	Goose.Query.Logf(5,"====================================================================== l.joins: %#v", l.joins)
+	Goose.Query.Logf(6,"====================================================================== l.joins: %#v", l.joins)
 
 	// allocate the scan parameters
 	for i, c = range l.cols {
@@ -94,7 +94,7 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s Scanner, out
 			}
 		} else {
 			parms[i] = fld.Addr().Interface()
-			Goose.Query.Logf(5, "Col c: %d, pkIndex: %d", c, d.tables[tabName].pkIndex)
+			Goose.Query.Logf(6, "Col c: %d, pkIndex: %d", c, d.tables[tabName].pkIndex)
 			if c == d.tables[tabName].pkIndex {
 				pkIndexPtr = parms[i]
 			}
