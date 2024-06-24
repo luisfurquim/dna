@@ -28,6 +28,7 @@ func New(driver Driver, schema Schema) (*Dna, error) {
 	var err error
 	var opt []string
 	var pkName string
+	var pkColumnName
 	var pkIndex int
 	var tmpList map[string]listSpec
 	var rule string
@@ -171,6 +172,10 @@ tableLoop:
 					fld.Name = f.Name
 				}
 
+				if fld.PK {
+					pkColumnName = fld.Name
+				}
+
 				fld.Type = f.Type
 				if fldPrec, ok = f.Tag.Lookup("prec"); ok && len(fldPrec)>0 {
 					fld.Prec = strings.Split(fldPrec, ",")
@@ -234,6 +239,7 @@ tableLoop:
 			stmtSpec = &StmtSpec{
 				Clause: SelectClause,
 				Table: tabName,
+				PkName: pkColumnName,
 				Rule: "0",
 			}
 
@@ -258,6 +264,7 @@ tableLoop:
 			stmtSpec = &StmtSpec{
 				Clause:    SelectClause,
 				Table:     tabName,
+				PkName:    pkColumnName,
 				Rule:		  "*",
 				Columns:   fld2stmt(fldList),
 				Sort:    []string{pkName},
@@ -302,6 +309,7 @@ tableLoop:
 				stmtSpec = &StmtSpec{
 					Clause: SelectClause,
 					Table: tabName,
+					PkName: pkColumnName,
 				}
 
 				for rule, spec = range tmpList {
@@ -444,6 +452,7 @@ tableLoop:
 			stmtSpec = &StmtSpec{
 				Clause: InsertClause,
 				Table: tabName,
+				PkName: pkColumnName,
 				Rule: "*",
 			}
 
@@ -483,6 +492,7 @@ tableLoop:
 			stmtSpec = &StmtSpec{
 				Clause: SelectClause,
 				Table: tabName,
+				PkName: pkColumnName,
 				Rule: "#",
 				Columns: []StmtColSpec{StmtColSpec{Column: pkName, Pk: true}},
 				ColFunc: map[int]string{0:"count"},
@@ -517,6 +527,7 @@ tableLoop:
 			stmtSpec = &StmtSpec{
 				Clause: DeleteClause,
 				Table: tabName,
+				PkName: pkColumnName,
 				Rule: "id",
 				Filter: pkName + "==<-" + pkName,
 			}

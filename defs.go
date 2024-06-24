@@ -122,6 +122,7 @@ type StmtColSpec struct{
 type StmtSpec struct{
 	Clause           	 Clause
 	Table           	 string
+	PkName             string
 	Rule				 	 string
 	Columns          []StmtColSpec
 	Aliases    map[int]string
