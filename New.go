@@ -28,7 +28,7 @@ func New(driver Driver, schema Schema) (*Dna, error) {
 	var err error
 	var opt []string
 	var pkName string
-	var pkColumnName
+	var pkColumnName string
 	var pkIndex int
 	var tmpList map[string]listSpec
 	var rule string
