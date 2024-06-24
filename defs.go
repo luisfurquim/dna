@@ -116,6 +116,7 @@ type StmtColSpec struct{
 	Column  string
 	Value   string
 	Type    ColType
+	Pk      bool
 }
 
 type StmtSpec struct{

@@ -1,7 +1,7 @@
 package dnaoracle
 
 import (
-//	"context"
+	"context"
 	"database/sql/driver"
    "github.com/sijms/go-ora/v2"
 	"github.com/luisfurquim/dna"
@@ -14,7 +14,7 @@ func (drv *Driver) Insert(tabName string, parms ...interface{}) (dna.PK, error) 
 	var stmt *go_ora.Stmt
 	var ok bool
 	var i int
-	var namedArgs []driver.Value
+	var namedArgs []driver.NamedValue
 	var b bool
 	var parm interface{}
 
@@ -28,7 +28,7 @@ func (drv *Driver) Insert(tabName string, parms ...interface{}) (dna.PK, error) 
 		return 0, ErrNoStmtForRule
 	}
 
-	namedArgs = make([]driver.Value,len(parms))
+	namedArgs = make([]driver.NamedValue,len(parms) + 1)
 	for i, parm = range parms {
 		if b, ok = parm.(bool); ok {
 			if b {
@@ -37,16 +37,24 @@ func (drv *Driver) Insert(tabName string, parms ...interface{}) (dna.PK, error) 
 				parm = "F"
 			}
 		}
-		namedArgs[i] = driver.Value(parm)
+		namedArgs[i] = driver.NamedValue{
+			Ordinal: i,
+			Value: parm,
+		}
+	}
+	namedArgs[i+1] = driver.NamedValue{
+		Ordinal: i+1,
+		Value: int64(0),
 	}
 	
-	res, err = stmt.Exec(namedArgs)
+	_, err = stmt.ExecContext(context.Background(), namedArgs)
 	if err != nil {
 		Goose.Query.Logf(1,"Error executing insert on table %s: %s", tabName, err)
 		return 0, err
 	}
 
-	id, err = res.LastInsertId()
+//	id, err = res.LastInsertId()
+	id = namedArgs[i+1].Value().(int64)
 	Goose.Query.Logf(1,"res.LastInsertId() on table %s: %d", tabName, id)
 	return dna.PK(id), err
 }

@@ -17,6 +17,7 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 	var e string
 	var offset, count string
 	var lim []string
+	var pkName string
 
 	if stmtSpec.Clause!=dna.DeleteClause && len(stmtSpec.Columns) == 0 {
 		return ErrNoColumns
@@ -112,9 +113,13 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 			if ok {
 				stmt += ")"
 			}
+
+			if col.Pk {
+				pkName = col.Column
+			}
 		}
 
-		stmt += ")"
+		stmt += `) RETURNING "` + pkName + `" into :DNA_LAST_INSERTED`
 
 	case dna.UpdateClause:
 		stmt = `UPDATE "` + stmtSpec.Table + `" SET `

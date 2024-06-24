@@ -238,10 +238,10 @@ tableLoop:
 			}
 
 			if driver.PKName() != "" {
-				stmtSpec.Columns = []StmtColSpec{StmtColSpec{Column: driver.PKName()}}
+				stmtSpec.Columns = []StmtColSpec{StmtColSpec{Column: driver.PKName(), Pk: true}}
 				stmtSpec.Sort = []string{driver.PKName()}
 			} else {
-				stmtSpec.Columns = []StmtColSpec{StmtColSpec{Column: pkName}}
+				stmtSpec.Columns = []StmtColSpec{StmtColSpec{Column: pkName, Pk: true}}
 				stmtSpec.Sort = []string{pkName}
 			}
 
@@ -283,7 +283,7 @@ tableLoop:
 
 			// If there is no private key in the list and the database has a special name for the id of a row
 			if i>=len(fldList) && driver.PKName() != "" {
-				stmtSpec.Columns = append(stmtSpec.Columns, StmtColSpec{Column: driver.PKName()})
+				stmtSpec.Columns = append(stmtSpec.Columns, StmtColSpec{Column: driver.PKName(), Pk: true})
 				stmtSpec.Filter = driver.PKName() + "==<-" + driver.PKName()
 				stmtSpec.Rule = "id:*"
 				err = driver.Prepare(stmtSpec)
@@ -315,9 +315,9 @@ tableLoop:
 						if parts[0] == pkName || parts[0] == driver.PKName() {
 							cols[j] = pkIndex
 							if driver.PKName() != "" {
-								stmtSpec.Columns = append(stmtSpec.Columns, StmtColSpec{Column: driver.PKName()})
+								stmtSpec.Columns = append(stmtSpec.Columns, StmtColSpec{Column: driver.PKName(), Pk: true})
 							} else {
-								stmtSpec.Columns = append(stmtSpec.Columns, StmtColSpec{Column: parts[0]})
+								stmtSpec.Columns = append(stmtSpec.Columns, StmtColSpec{Column: parts[0], Pk: true})
 							}
 							k = pkIndex
 //							pkAdded = true
@@ -484,7 +484,7 @@ tableLoop:
 				Clause: SelectClause,
 				Table: tabName,
 				Rule: "#",
-				Columns: []StmtColSpec{StmtColSpec{Column: pkName}},
+				Columns: []StmtColSpec{StmtColSpec{Column: pkName, Pk: true}},
 				ColFunc: map[int]string{0:"count"},
 			}
 
