@@ -51,8 +51,9 @@ func (d *Dna) save(row interface{}, visited map[string]struct{}, opt []SaveOptio
 //	Goose.Query.Logf(0, "id:%d, parms: %#v", id, parms)
 
 	if pk==0 {
-//		Goose.Query.Logf(0, "d.insert:%#v, tabName: %s", d.insert, tabName)
+		Goose.Query.Logf(5, "d.insert:%#v, tabName: %s", d.insert, tabName)
 		pk, err = d.driver.Insert(tabName, parms...)
+		Goose.Query.Logf(5, "pk = %d", pk)
 		if err != nil {
 			Goose.Query.Logf(1, "Insert error on %s: %s", tabName, err)
 			return 0, err
@@ -64,7 +65,7 @@ func (d *Dna) save(row interface{}, visited map[string]struct{}, opt []SaveOptio
 		parms = append(parms, pk)
 		Goose.Query.Logf(5, "-=-=-=-=-=-=-=-=-=-=-=-=-=- Update parms on %s: %#v", tabName, parms)
 		err = d.driver.Update(tabName, parms...)
-//		Goose.Query.Logf(1, "Update error %s on %s: %#v", err, tabName, parms)
+		Goose.Query.Logf(5, "Update on %s: %#v", tabName, parms)
 		if err != nil {
 			Goose.Query.Logf(1, "Update error on %s: %s", tabName, err)
 			return 0, err

@@ -55,6 +55,7 @@ func (drv *Driver) Insert(tabName string, parms ...interface{}) (dna.PK, error) 
 	}
 
 	id, err = res.LastInsertId()
+	Goose.Query.Logf(1,"res.LastInsertId() on table %s: %d", tabName, id)
 	return dna.PK(id), err
 }
 

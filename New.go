@@ -466,7 +466,13 @@ tableLoop:
 
 			stmtSpec.Clause = UpdateClause
 			stmtSpec.Rule = "id"
-			stmtSpec.Filter = pkName + "==<-" + pkName
+
+			for i=0; i<len(fldList); i++ {
+				if fldList[i].PK {
+					stmtSpec.Filter = fldList[i].Name + "==<-" + fldList[i].Name
+					break
+				}
+			}
 
 			err = driver.Prepare(stmtSpec)
 			if err != nil {
