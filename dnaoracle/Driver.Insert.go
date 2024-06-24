@@ -9,7 +9,7 @@ import (
 
 func (drv *Driver) Insert(tabName string, parms ...interface{}) (dna.PK, error) {
 	var id int64
-	var res driver.Result
+//	var res driver.Result
 	var err error
 	var stmt *go_ora.Stmt
 	var ok bool
