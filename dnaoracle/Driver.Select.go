@@ -50,9 +50,9 @@ func (drv *Driver) Select(tabName string, at dna.At, fn func(dna.Scanner) error)
 			return err
 		}
 		serr = fmt.Sprintf("%s", err)
-		if strings.hasPrefix(serr,"ORA-01002") {
+		if strings.HasPrefix(serr,"ORA-01002") {
 			stmt = &Stmt{
-				Stmt: go_ora.NewStmt(stmt.SQL, drv.db),
+				Stmt: *go_ora.NewStmt(stmt.SQL, drv.db),
 				SQL: stmt.SQL,
 			}
 			drv.find[tabName][at.With] = stmt
