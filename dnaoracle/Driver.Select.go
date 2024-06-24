@@ -2,19 +2,22 @@ package dnaoracle
 
 import (
 	"io"
+	"strings"
 	"context"
 	"database/sql/driver"
-//   "github.com/sijms/go-ora/v2"
+   "github.com/sijms/go-ora/v2"
 	"github.com/luisfurquim/dna"
 )
 
 func (drv *Driver) Select(tabName string, at dna.At, fn func(dna.Scanner) error) error {
 	var err error
 	var stmt *Stmt
+	var ostmt *go_ora.Stmt
 	var ok bool
 	var rows driver.Rows
 	var namedArgs []driver.NamedValue
 	var s *Scanner
+	var serr string
 
 	if _, ok = drv.find[tabName]; !ok {
 		Goose.Query.Logf(1,"Error binding parameters for table %s: %s", tabName, ErrNoStmtForTable)
@@ -37,8 +40,24 @@ func (drv *Driver) Select(tabName string, at dna.At, fn func(dna.Scanner) error)
 	Goose.Query.Logf(6,"by: %#v", at.By)
 	Goose.Query.Logf(6,"Parms: %#v", namedArgs)
 
-	rows, err = stmt.QueryContext(context.Background(), namedArgs)
-	if err != nil {
+	for {
+		rows, err = stmt.QueryContext(context.Background(), namedArgs)
+		if err == nil {
+			break
+		}
+
+		if len(serr) > 0 {
+			return err
+		}
+		serr = err.String()
+		if strings.hasPrefix(serr,"ORA-01002") {
+			stmt = &Stmt{
+				Stmt: go_ora.NewStmt(stmt.SQL, drv.db),
+				SQL: stmt.SQL,
+			}
+			drv.find[tabName][at.With] = stmt
+			continue
+		}
 		Goose.Query.Logf(1,"Error selecting from table %s, rule %s: %s", tabName, at.With, err)
 		return err
 	}
