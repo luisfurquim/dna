@@ -2,6 +2,7 @@ package dnaoracle
 
 import (
 	"io"
+	"fmt"
 	"strings"
 	"context"
 	"database/sql/driver"
@@ -12,7 +13,6 @@ import (
 func (drv *Driver) Select(tabName string, at dna.At, fn func(dna.Scanner) error) error {
 	var err error
 	var stmt *Stmt
-	var ostmt *go_ora.Stmt
 	var ok bool
 	var rows driver.Rows
 	var namedArgs []driver.NamedValue
@@ -49,7 +49,7 @@ func (drv *Driver) Select(tabName string, at dna.At, fn func(dna.Scanner) error)
 		if len(serr) > 0 {
 			return err
 		}
-		serr = err.String()
+		serr = fmt.Sprintf("%s", err)
 		if strings.hasPrefix(serr,"ORA-01002") {
 			stmt = &Stmt{
 				Stmt: go_ora.NewStmt(stmt.SQL, drv.db),
