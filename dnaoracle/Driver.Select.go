@@ -48,13 +48,19 @@ func (drv *Driver) Select(tabName string, at dna.At, fn func(dna.Scanner) error)
 	for {
 //		Goose.Query.Logf(0,"select loop",)
 		err = fn(s)
+		Goose.Query.Logf(1,"S1")
 		if err != nil {
+			Goose.Query.Logf(1,"S2")
 			if err == io.EOF {
+				Goose.Query.Logf(1,"S3")
 				return nil
 			}
+			Goose.Query.Logf(1,"S4")
 			return err
 		}
+		Goose.Query.Logf(1,"S5")
 	}
+	Goose.Query.Logf(1,"S6")
 
 	// never reaches this
 	return nil
