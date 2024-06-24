@@ -186,47 +186,59 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 	switch stmtSpec.Clause {
 	case dna.SelectClause:
 		if drv.find == nil {
-			drv.find = map[string]map[string]*go_ora.Stmt{}
+			drv.find = map[string]map[string]*Stmt{}
 		}
 
 		if _, ok = drv.find[stmtSpec.Table]; !ok {
-			drv.find[stmtSpec.Table] = map[string]*go_ora.Stmt{}
+			drv.find[stmtSpec.Table] = map[string]*Stmt{}
 		}
 
-		drv.find[stmtSpec.Table][stmtSpec.Rule] = st
+		drv.find[stmtSpec.Table][stmtSpec.Rule] = &Stmt{
+			Stmt: *st,
+			SQL: stmt,
+		}
 
 	case dna.InsertClause:
 		if drv.insert == nil {
-			drv.insert = map[string]map[string]*go_ora.Stmt{}
+			drv.insert = map[string]map[string]*Stmt{}
 		}
 
 		if _, ok = drv.insert[stmtSpec.Table]; !ok {
-			drv.insert[stmtSpec.Table] = map[string]*go_ora.Stmt{}
+			drv.insert[stmtSpec.Table] = map[string]*Stmt{}
 		}
 
-		drv.insert[stmtSpec.Table][stmtSpec.Rule] = st
+		drv.insert[stmtSpec.Table][stmtSpec.Rule] = &Stmt{
+			Stmt: *st,
+			SQL: stmt,
+		}
 
 	case dna.UpdateClause:
 		if drv.update == nil {
-			drv.update = map[string]map[string]*go_ora.Stmt{}
+			drv.update = map[string]map[string]*Stmt{}
 		}
 
 		if _, ok = drv.update[stmtSpec.Table]; !ok {
-			drv.update[stmtSpec.Table] = map[string]*go_ora.Stmt{}
+			drv.update[stmtSpec.Table] = map[string]*Stmt{}
 		}
 
-		drv.update[stmtSpec.Table][stmtSpec.Rule] = st
+		drv.update[stmtSpec.Table][stmtSpec.Rule] = &Stmt{
+			Stmt: *st,
+			SQL: stmt,
+		}
 
 	case dna.DeleteClause:
 		if drv.delete == nil {
-			drv.delete = map[string]map[string]*go_ora.Stmt{}
+			drv.delete = map[string]map[string]*Stmt{}
 		}
 
 		if _, ok = drv.delete[stmtSpec.Table]; !ok {
-			drv.delete[stmtSpec.Table] = map[string]*go_ora.Stmt{}
+			drv.delete[stmtSpec.Table] = map[string]*Stmt{}
 		}
 
-		drv.delete[stmtSpec.Table][stmtSpec.Rule] = st
+		drv.delete[stmtSpec.Table][stmtSpec.Rule] = &Stmt{
+			Stmt: *st,
+			SQL: stmt,
+		}
 	}
 
 	return nil

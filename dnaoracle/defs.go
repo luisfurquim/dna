@@ -12,12 +12,17 @@ import (
 
 const longString int = 2000
 
+type Stmt struct {
+	go_ora.Stmt
+	SQL string
+}
+
 type Driver struct {
 	db *go_ora.Connection
-	insert map[string]map[string]*go_ora.Stmt
-	update map[string]map[string]*go_ora.Stmt
-	find map[string]map[string]*go_ora.Stmt
-	delete map[string]map[string]*go_ora.Stmt
+	insert map[string]map[string]*Stmt
+	update map[string]map[string]*Stmt
+	find map[string]map[string]*Stmt
+	delete map[string]map[string]*Stmt
 }
 
 type fnSpec struct{

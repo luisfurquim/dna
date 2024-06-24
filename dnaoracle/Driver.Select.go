@@ -53,7 +53,7 @@ func (drv *Driver) Select(tabName string, at dna.At, fn func(dna.Scanner) error)
 		err = fn(s)
 		Goose.Query.Logf(1,"S1")
 		if err != nil {
-			stmt.Close()
+//			stmt.Close()
 			Goose.Query.Logf(1,"S2")
 			if err == io.EOF {
 				Goose.Query.Logf(1,"S3")
