@@ -4,7 +4,7 @@ import (
 	"io"
 	"context"
 	"database/sql/driver"
-   "github.com/sijms/go-ora/v2"
+//   "github.com/sijms/go-ora/v2"
 	"github.com/luisfurquim/dna"
 )
 
