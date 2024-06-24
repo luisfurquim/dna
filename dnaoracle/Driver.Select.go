@@ -32,6 +32,8 @@ func (drv *Driver) Select(tabName string, at dna.At, fn func(dna.Scanner) error)
 		return err
 	}
 
+	Goose.Query.Logf(4,"tabName: %s", tabName)
+	Goose.Query.Logf(4,"rule: %s", at.With)
 	Goose.Query.Logf(6,"by: %#v", at.By)
 	Goose.Query.Logf(6,"Parms: %#v", namedArgs)
 
