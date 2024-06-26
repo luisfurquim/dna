@@ -94,8 +94,8 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s Scanner, out
 			}
 		} else {
 			parms[i] = fld.Addr().Interface()
-			Goose.Query.Logf(6, "Col c: %d, pkIndex: %d, pk: %d", c, d.tables[tabName].pkIndex, *(parms[i].(*PK)))
 			if c == d.tables[tabName].pkIndex {
+				Goose.Query.Logf(6, "Col c: %d, pkIndex: %d, pk: %d", c, d.tables[tabName].pkIndex, *(parms[i].(*PK)))
 				pkIndexPtr = parms[i]
 			}
 		}
