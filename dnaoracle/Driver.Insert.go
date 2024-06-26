@@ -47,6 +47,10 @@ func (drv *Driver) Insert(tabName string, parms ...interface{}) (dna.PK, error) 
 		Value: &id,
 	}
 	
+	Goose.Query.Logf(5,"tabName: %s", tabName)
+	Goose.Query.Logf(5,"SQL: %s", stmt.SQL)
+	Goose.Query.Logf(6,"Parms: %#v", namedArgs)
+
 	_, err = stmt.ExecContext(context.Background(), namedArgs)
 	if err != nil {
 		Goose.Query.Logf(1,"Error executing insert on table %s: %s", tabName, err)
