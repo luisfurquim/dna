@@ -94,7 +94,7 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s Scanner, out
 			}
 		} else {
 			parms[i] = fld.Addr().Interface()
-			Goose.Query.Logf(6, "Col c: %d, pkIndex: %d, pk: %d", c, d.tables[tabName].pkIndex, parms[i])
+			Goose.Query.Logf(6, "Col c: %d, pkIndex: %d, pk: %d", c, d.tables[tabName].pkIndex, *(parms[i].(*PK)))
 			if c == d.tables[tabName].pkIndex {
 				pkIndexPtr = parms[i]
 			}
@@ -186,7 +186,7 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s Scanner, out
 	}
 
 	// Then the Slices (many rows)
-	pkIndex = *(pkIndexPtr.(*PK));
+	pkIndex = *(pkIndexPtr.(*PK))
 	for c, fld = range frows {
 //		Goose.Query.Logf(0, "************************************* c=%s, l.joins=%#v", c, l.joins)
 		lst = l.joins[c]
