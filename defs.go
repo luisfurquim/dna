@@ -3,6 +3,7 @@ package dna
 import (
 	"errors"
 	"reflect"
+	"database/sql/driver"
    "github.com/luisfurquim/goose"
 )
 
@@ -102,8 +103,8 @@ type Driver interface {
 	CreateTable(tabName string, columns []FieldSpec) error
 	Prepare(stmt *StmtSpec) error
 	Select(tabName string, at At, callback func(Scanner) error) error
-	Insert(tabName string, parms ...interface{}) (PK, error)
-	Update(tabName string, parms ...interface{}) error
+	Insert(tabName string, pk driver.NamedValue, parms []driver.NamedValue) (PK, error)
+	Update(tabName string, pk driver.NamedValue, parms []driver.NamedValue) error
 	Delete(tabName string, at At) error
 	Exists(tabName string) bool
 }

@@ -2,6 +2,7 @@ package dna
 
 import (
 	"reflect"
+	"database/sql/driver"
 )
 
 func (d *Dna) save(row interface{}, visited map[string]struct{}, opt []SaveOption) (PK, error) {
@@ -11,8 +12,9 @@ func (d *Dna) save(row interface{}, visited map[string]struct{}, opt []SaveOptio
 	var refTabName string
 	var refRow reflect.Value
 	var err error
-	var parms []interface{}
+	var parms []driver.NamedValue
 	var fname string
+	var pkName string
 	var fk reflect.Value
 	var related reflect.Type
 	var ok bool
@@ -39,9 +41,9 @@ func (d *Dna) save(row interface{}, visited map[string]struct{}, opt []SaveOptio
 //	Goose.Query.Logf(0, "tabName: %s, refRow: %#v", tabName, refRow)
 
 	if noCascade {
-		pk, parms = d.getParmValues(tabName, refRow, func(r interface{}) {})
+		pkName, pk, parms = d.getParmValues(tabName, refRow, func(r interface{}) {})
 	} else {
-		pk, parms = d.getParmValues(tabName, refRow, func(r interface{}) {
+		pkName, pk, parms = d.getParmValues(tabName, refRow, func(r interface{}) {
 //			Goose.Query.Logf(0, "r: %#v", r)
 			// recursively save related tables
 			d.save(r, visited, opt)
@@ -52,7 +54,7 @@ func (d *Dna) save(row interface{}, visited map[string]struct{}, opt []SaveOptio
 
 	if pk==0 {
 		Goose.Query.Logf(5, "insert tabName: %s, parms: :%#v", tabName, parms)
-		pk, err = d.driver.Insert(tabName, parms...)
+		pk, err = d.driver.Insert(tabName, driver.NamedValue{Name:pkName, Value:pk}, parms)
 		Goose.Query.Logf(5, "pk = %d", pk)
 		if err != nil {
 			Goose.Query.Logf(1, "Insert error on %s: %s", tabName, err)
@@ -62,9 +64,8 @@ func (d *Dna) save(row interface{}, visited map[string]struct{}, opt []SaveOptio
 			refRow.Field(d.tables[tabName].pkIndex).SetInt(int64(pk))
 		}
 	} else {
-		parms = append(parms, pk)
 		Goose.Query.Logf(5, "-=-=-=-=-=-=-=-=-=-=-=-=-=- Update parms on %s: %#v", tabName, parms)
-		err = d.driver.Update(tabName, parms...)
+		err = d.driver.Update(tabName, driver.NamedValue{Name:pkName, Value:pk}, parms)
 		Goose.Query.Logf(5, "Update on %s: %#v", tabName, parms)
 		if err != nil {
 			Goose.Query.Logf(1, "Update error on %s: %s", tabName, err)
