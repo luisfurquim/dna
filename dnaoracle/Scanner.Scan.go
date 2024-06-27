@@ -11,6 +11,8 @@ func (s *Scanner) Scan(parms ...interface{})  error {
 	var i int
 	var val reflect.Value
 	var err error
+	var out string
+	var v interface{}
 
 	row = make([]driver.Value, len(parms))
 
@@ -23,7 +25,7 @@ func (s *Scanner) Scan(parms ...interface{})  error {
 	for i, _ = range row {
 		Goose.Query.Logf(6,"col: %#v", row[i])
 		if row[i] != nil {
-			Goose.Query.Logf(6,"!nil")
+			Goose.Query.Logf(6,"!nil:%d", parms[i])
 			val = reflect.ValueOf(parms[i]).Elem()
 			switch val.Kind() {
 			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
@@ -43,7 +45,10 @@ func (s *Scanner) Scan(parms ...interface{})  error {
 		}
 	}
 
-	Goose.Query.Logf(5,"end scan")
+	for i, v = range parms {
+		out += fmt.Sprintf("%d:%#v ", i, reflect.ValueOf(v).Elem().Interface())
+	}
+	Goose.Query.Logf(5,"end scan -> parms: %s", out)
 
 	return nil
 }

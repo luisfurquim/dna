@@ -78,7 +78,7 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s Scanner, out
 			}
 		} else if lst, ok = l.joins[c]; ok && lst.targetName != "" {
 			parms[i] = fld.Addr().Interface()
-			pkIndexPtr = parms[i]
+//			pkIndexPtr = parms[i]
 			target = getField(row, lst.targetIndex)
 
 //			Goose.Query.Logf(0, "target (%T): %#v", target, target)
@@ -95,7 +95,7 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s Scanner, out
 		} else {
 			parms[i] = fld.Addr().Interface()
 			if c == d.tables[tabName].pkIndex {
-				Goose.Query.Logf(6, "Col c: %d, pkIndex: %d, pk: %d", c, d.tables[tabName].pkIndex, *(parms[i].(*PK)))
+				Goose.Query.Logf(6, "Col c: %d, pkIndex: %d, pk: %d->%d", c, d.tables[tabName].pkIndex, *(parms[i].(*PK)), fld.Interface())
 				pkIndexPtr = parms[i]
 			}
 		}
@@ -118,11 +118,11 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s Scanner, out
 		return err
 	}
 
-/*
+
 	for n, p := range parms {
 		Goose.Query.Logf(0,"####################### scanned data: %d->%#v", n, reflect.ValueOf(p).Elem().Interface())
 	}
-*/
+
 
 	// Now we scan the joined tables
 
@@ -186,6 +186,10 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s Scanner, out
 	}
 
 	// Then the Slices (many rows)
+	if pkIndexPtr == nil {
+		return nil
+	}
+	
 	pkIndex = *(pkIndexPtr.(*PK))
 	for c, fld = range frows {
 //		Goose.Query.Logf(0, "************************************* c=%s, l.joins=%#v", c, l.joins)
