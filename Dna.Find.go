@@ -119,8 +119,9 @@ func (d *Dna) nextRow(tabName string, l *list, row reflect.Value, s Scanner, out
 	}
 
 
+
 	for n, p := range parms {
-		Goose.Query.Logf(0,"####################### scanned data: %d->%#v", n, reflect.ValueOf(p).Elem().Interface())
+		Goose.Query.Logf(5,"####################### scanned data: %d->%#v", n, reflect.ValueOf(p).Elem().Interface())
 	}
 
 

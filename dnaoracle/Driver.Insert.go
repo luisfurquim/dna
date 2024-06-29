@@ -38,7 +38,7 @@ func (drv *Driver) Insert(tabName string, pk driver.NamedValue, parms []driver.N
 
 	_, err = stmt.ExecContext(context.Background(), parms)
 	if err != nil {
-		Goose.Query.Logf(1,"Error executing insert on table %s: %s", tabName, err)
+		Goose.Query.Logf(1,"Error executing insert on table %s: %s, SQL: %s --------- data: %#v", tabName, err, stmt.SQL, parms)
 		return 0, err
 	}
 
