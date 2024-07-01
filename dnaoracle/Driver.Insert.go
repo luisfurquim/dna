@@ -45,7 +45,7 @@ func (drv *Driver) Insert(tabName string, pk driver.NamedValue, parms []driver.N
 	tx.Commit()
 
 //	id, err = res.LastInsertId()
-	Goose.Query.Logf(1,"res.LastInsertId() on table %s: %d", tabName, id)
+	Goose.Query.Logf(4,"res.LastInsertId() on table %s: %d", tabName, id)
 	return id, err
 }
 

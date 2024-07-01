@@ -19,7 +19,7 @@ func (d *Dna) getList(tabName, rule string) (l *list, err error) {
 	}
 
 	if l, ok = r[rule]; !ok {
-		Goose.Query.Logf(1, "Error listing table %s: %s", tabName, ErrRuleNotFound)
+		Goose.Query.Logf(1, "Error listing table %s rule %s: %s", tabName, rule, ErrRuleNotFound)
 //		Goose.Query.Logf(1, "rule %s: rules %#v", rule, d.list)
 		err = ErrRuleNotFound
 		return

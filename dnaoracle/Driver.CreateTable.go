@@ -195,6 +195,9 @@ func (drv *Driver) CreateTable(tabName string, fieldSpecs []dna.FieldSpec) error
 		if strings.HasPrefix(fmt.Sprintf("%s",err), "ORA-00955") {
 			return nil
 		}
+		if strings.HasPrefix(fmt.Sprintf("%s",err), "ORA-02264") {
+			return nil
+		}
 		Goose.Init.Logf(1,"Error creating %s table: %s", tabName, err)
 	}
 

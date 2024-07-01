@@ -529,7 +529,7 @@ tableLoop:
 				Table: tabName,
 				PkName: pkColumnName,
 				Rule: "id",
-				Filter: pkName + "==<-" + pkName,
+				Filter: pkColumnName + "==<-" + pkColumnName,
 			}
 
 			err = driver.Prepare(stmtSpec)

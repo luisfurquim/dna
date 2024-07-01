@@ -1,15 +1,17 @@
 package dnaoracle
 
 import (
+	"context"
+	"database/sql/driver"
 //   "github.com/sijms/go-ora/v2"
 	"github.com/luisfurquim/dna"
 )
 
 func (drv *Driver) Delete(tabName string, at dna.At) error{
-/*
 	var err error
-	var stmt *sqlite.Stmt
+	var stmt *Stmt
 	var ok bool
+	var namedArgs []driver.NamedValue
 
 	if _, ok = drv.delete[tabName]; !ok {
 		Goose.Query.Logf(1,"Error binding parameters for table %s: %s", tabName, ErrNoStmtForTable)
@@ -21,14 +23,17 @@ func (drv *Driver) Delete(tabName string, at dna.At) error{
 		return ErrNoStmtForRule
 	}
 	
-	err = drv.BindParameter(tabName, at, stmt)
+	namedArgs, err = drv.BindParameter(tabName, at)
 	if err != nil {
 		Goose.Query.Logf(1,"Error binding parameters for table %s, rule %s: %s", tabName, at.With, err)
 		return err
 	}
 
-	return stmt.Exec()
-*/
+	_, err = stmt.ExecContext(context.Background(), namedArgs)
 
-	return nil
+	if err != nil {
+		Goose.Query.Logf(1,"Error deleting from table %s, rule %s, sql: %s: %s", tabName, at.With, stmt.SQL, err)
+	}
+	
+	return err
 }
