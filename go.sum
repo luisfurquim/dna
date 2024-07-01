@@ -11,3 +11,5 @@ github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
 github.com/luisfurquim/goose v0.0.0-20201207195701-3cbdfe9e38da h1:r/7B62h+ncpoI9hfpqLWHeLZeZwW1RLvibB4x6HWN1E=
 github.com/luisfurquim/goose v0.0.0-20201207195701-3cbdfe9e38da/go.mod h1:koolrwDt83ePklQY7OdWLRBV93CSJScdnDjpVb9QTgs=
+github.com/sijms/go-ora/v2 v2.8.19 h1:7LoKZatDYGi18mkpQTR/gQvG9yOdtc7hPAex96Bqisc=
+github.com/sijms/go-ora/v2 v2.8.19/go.mod h1:EHxlY6x7y9HAsdfumurRfTd+v8NrEOTR3Xl4FWlH6xk=

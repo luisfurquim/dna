@@ -19,6 +19,7 @@ type Stmt struct {
 
 type Driver struct {
 	db *go_ora.Connection
+	use_quotes bool
 	insert map[string]map[string]*Stmt
 	update map[string]map[string]*Stmt
 	find map[string]map[string]*Stmt

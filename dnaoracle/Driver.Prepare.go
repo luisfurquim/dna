@@ -17,6 +17,11 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 	var e string
 	var offset, count string
 	var lim []string
+	var qt string
+
+	if drv.use_quotes {
+		qt = `"`
+	}
 
 	if stmtSpec.Clause!=dna.DeleteClause && len(stmtSpec.Columns) == 0 {
 		return ErrNoColumns
@@ -32,7 +37,7 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 			if fn, ok = stmtSpec.ColFunc[i]; ok {
 				stmt += fn + "("
 			}
-			stmt += `"` + col.Column + `"`
+			stmt += qt + col.Column + qt
 			if ok {
 				stmt += ")"
 			}
@@ -41,7 +46,7 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 			}
 		}
 
-		stmt += ` FROM "` + stmtSpec.Table + `" `
+		stmt += ` FROM ` + qt + stmtSpec.Table + qt + ` `
 
 		if len(stmtSpec.Filter) > 0 {
 			e, err = expr(stmtSpec.Filter)
@@ -61,7 +66,7 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 				if i>0 {
 					stmt += ", "
 				}
-				stmt += `"` + stmtSpec.Sort[i] + `"`
+				stmt += qt + stmtSpec.Sort[i] + qt
 				if len(stmtSpec.SortDir)>i && stmtSpec.SortDir[i] == ">" {
 					stmt += " DESC"
 				}
@@ -81,13 +86,13 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 		}
 		
 	case dna.InsertClause:
-		stmt = `INSERT INTO "` + stmtSpec.Table + `" (`
+		stmt = `INSERT INTO ` + qt + stmtSpec.Table + qt + ` (`
 
 		for i, col = range stmtSpec.Columns {
 			if i>0 {
 				stmt += ", "
 			}
-			stmt += `"` + col.Column + `"`
+			stmt += qt + col.Column + qt
 		}
 
 		stmt += ") VALUES ("
@@ -115,16 +120,16 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 
 		}
 
-		stmt += `) RETURNING "` + stmtSpec.PkName + `" into :DNA_LAST_INSERTED`
+		stmt += `) RETURNING ` + qt + stmtSpec.PkName + qt + ` into :DNA_LAST_INSERTED`
 
 	case dna.UpdateClause:
-		stmt = `UPDATE "` + stmtSpec.Table + `" SET `
+		stmt = `UPDATE ` + qt + stmtSpec.Table + qt + ` SET `
 
 		for i, col = range stmtSpec.Columns {
 			if i>0 {
 				stmt += ", "
 			}
-			stmt += `"` + col.Column + `"=`
+			stmt += qt + col.Column + qt + `=`
 
 			if fn, ok = stmtSpec.ColFunc[i]; ok {
 				stmt += fn + "("
@@ -155,7 +160,7 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 		}
 
 	case dna.DeleteClause:
-		stmt = `DELETE FROM "` + stmtSpec.Table + `"`
+		stmt = `DELETE FROM ` + qt + stmtSpec.Table + qt
 		if len(stmtSpec.Filter) > 0 {
 			e, err = expr(stmtSpec.Filter)
 			if err != nil {

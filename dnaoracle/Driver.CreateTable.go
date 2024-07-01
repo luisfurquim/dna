@@ -15,6 +15,11 @@ func (drv *Driver) CreateTable(tabName string, fieldSpecs []dna.FieldSpec) error
 	var fieldSpec dna.FieldSpec
 	var prec, frac int
 	var pkConstraint string
+	var qt string
+
+	if drv.use_quotes {
+		qt = `"`
+	}
 
 	for _, fieldSpec = range fieldSpecs {
 		if fieldSpec.JoinList {
@@ -23,7 +28,7 @@ func (drv *Driver) CreateTable(tabName string, fieldSpecs []dna.FieldSpec) error
 		if len(colNames) > 0 {
 			colNames += ","
 		}
-		colNames += `"` + fieldSpec.Name + `"`
+		colNames += qt + fieldSpec.Name + qt
 		if fieldSpec.PK {
 			colNames += " NUMBER"
 			if len(fieldSpec.Prec) >=1 {
@@ -33,7 +38,7 @@ func (drv *Driver) CreateTable(tabName string, fieldSpecs []dna.FieldSpec) error
 				prec = 38
 			}
 			colNames += fmt.Sprintf(" GENERATED ALWAYS AS IDENTITY INCREMENT BY 1 START WITH 1 MINVALUE 1 MAXVALUE %s NOCYCLE NOT NULL", strings.Repeat("9", prec))
-			pkConstraint = `, CONSTRAINT "` + tabName + `_PK" PRIMARY KEY ("` + fieldSpec.Name + `")`
+			pkConstraint = `, CONSTRAINT ` + qt + tabName + `_PK` + qt + ` PRIMARY KEY (` + qt + fieldSpec.Name + qt + `)`
 		} else if len(fieldSpec.Fk) > 0 { // needs FK prec
 			colNames += " NUMBER"
 		} else {
@@ -188,9 +193,9 @@ func (drv *Driver) CreateTable(tabName string, fieldSpecs []dna.FieldSpec) error
 		}
 	}
 
-	Goose.Init.Logf(5,`CREATE TABLE "%s" (%s%s)`, tabName, colNames, pkConstraint)
+	Goose.Init.Logf(5,`CREATE TABLE ` + qt + `%s` + qt + ` (%s%s)`, tabName, colNames, pkConstraint)
 
-	_, err = drv.db.Exec(fmt.Sprintf(`CREATE TABLE "%s" (%s%s)`, tabName, colNames, pkConstraint))
+	_, err = drv.db.Exec(fmt.Sprintf(`CREATE TABLE ` + qt + `%s` + qt + ` (%s%s)`, tabName, colNames, pkConstraint))
 	if err != nil {
 		if strings.HasPrefix(fmt.Sprintf("%s",err), "ORA-00955") {
 			return nil
