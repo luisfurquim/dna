@@ -354,7 +354,8 @@ tableLoop:
 								k, ok = fieldByNameFromType(parts[0], reftab)
 								if !ok {
 									Goose.Init.Logf(1,"Err compiling list %s from %s: %s", rule, tabName, ErrColumnNotFound)
-									Goose.Init.Logf(1,"tmpList %#v col %s", tmpList, spec.cols[j])
+									Goose.Init.Logf(1,"tmpList %#v", tmpList)
+									Goose.Init.Logf(1,"col %s, parts[0]: %s", spec.cols[j], parts[0])
 									Goose.Init.Logf(1,"fldList %#v", fldList)
 									Goose.Init.Logf(1,"pkName %s", pkName)
 									return nil, ErrColumnNotFound
