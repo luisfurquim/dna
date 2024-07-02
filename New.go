@@ -185,7 +185,10 @@ tableLoop:
 				if f.Type.Kind() == reflect.Pointer {
 					if fk, ok = d.tableType[f.Type.Elem().Name()]; ok {
 						fld.Fk = fk
-						fld.Name = "id_" + fld.Name
+//
+// Here
+//						
+						fld.Name = pkColumnName + "_" + fld.Name
 						fld.Type = f.Type.Elem()
 //					} else {
 //						Goose.Init.Logf(0, "fld.name: %s => %s", fld.name, f.Type.Name())
