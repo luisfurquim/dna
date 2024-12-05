@@ -26,7 +26,7 @@ func (drv *Driver) Update(tabName string, pk driver.NamedValue, parms []driver.N
 
 	_, err = stmt.ExecContext(context.Background(), parms)
 	if err != nil {
-		Goose.Query.Logf(1,"Error executing insert on table %s: %s", tabName, err)
+		Goose.Query.Logf(1,"Error executing update on table %s: %s", tabName, err)
 		return err
 	}
 

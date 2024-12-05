@@ -76,13 +76,36 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 		if len(stmtSpec.Limit) > 0 {
 			lim = strings.Split(stmtSpec.Limit,":")
 			if len(lim)>1 {
-				offset = lim[0]
-				count = lim[1]
+
+				e, err = expr(lim[0])
+				if err != nil {
+					Goose.Init.Logf(1,"Error translating limit clause %s: %s", lim[0], err)
+					return err
+				}
+
+				offset = e
+
+				e, err = expr(lim[1])
+				if err != nil {
+					Goose.Init.Logf(1,"Error translating limit clause %s: %s", lim[0], err)
+					return err
+				}
+
+				count = e
 			} else {
 				offset = "0"
-				count = lim[0]
+
+				e, err = expr(lim[0])
+				if err != nil {
+					Goose.Init.Logf(1,"Error translating limit clause %s: %s", lim[0], err)
+					return err
+				}
+
+				count = e
 			}
 			stmt += " OFFSET " + offset + " ROWS FETCH NEXT " + count + " ROWS ONLY"
+
+			Goose.Init.Logf(4,"Query with limit %s", stmt)
 		}
 		
 	case dna.InsertClause:
