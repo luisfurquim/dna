@@ -244,6 +244,7 @@ tableLoop:
 				Table: tabName,
 				PkName: pkColumnName,
 				Rule: "0",
+				PkFieldName: pkColumnName,
 			}
 
 			if driver.PKName() != "" {
@@ -271,6 +272,7 @@ tableLoop:
 				Rule:		  "*",
 				Columns:   fld2stmt(fldList),
 				Sort:    []string{pkName},
+				PkFieldName: pkColumnName,
 			}
 
 			err = driver.Prepare(stmtSpec)
@@ -313,6 +315,7 @@ tableLoop:
 					Clause: SelectClause,
 					Table: tabName,
 					PkName: pkColumnName,
+					PkFieldName: pkColumnName,
 				}
 
 				for rule, spec = range tmpList {
@@ -355,7 +358,7 @@ tableLoop:
 								if !ok {
 									Goose.Init.Logf(1,"Err compiling list %s from %s: %s", rule, tabName, ErrColumnNotFound)
 									Goose.Init.Logf(1,"tmpList %#v", tmpList)
-									Goose.Init.Logf(1,"col %s, parts[0]: %s", spec.cols[j], parts[0])
+									Goose.Init.Logf(1,"col %s, parts: %#v", spec.cols[j], parts)
 									Goose.Init.Logf(1,"fldList %#v", fldList)
 									Goose.Init.Logf(1,"pkName %s", pkName)
 									return nil, ErrColumnNotFound
@@ -458,6 +461,7 @@ tableLoop:
 				Table: tabName,
 				PkName: pkColumnName,
 				Rule: "*",
+				PkFieldName: pkColumnName,
 			}
 
 			for i=0; i<len(fldList); i++ {
@@ -494,12 +498,13 @@ tableLoop:
 			}
 
 			stmtSpec = &StmtSpec{
-				Clause: SelectClause,
+				Clause: CountClause,
 				Table: tabName,
 				PkName: pkColumnName,
 				Rule: "#",
 				Columns: []StmtColSpec{StmtColSpec{Column: pkName, Pk: true}},
 				ColFunc: map[int]string{0:"count"},
+				PkFieldName: pkColumnName,
 			}
 
 			err = driver.Prepare(stmtSpec)
@@ -534,6 +539,7 @@ tableLoop:
 				PkName: pkColumnName,
 				Rule: "id",
 				Filter: pkColumnName + "==<-" + pkColumnName,
+				PkFieldName: pkColumnName,
 			}
 
 			err = driver.Prepare(stmtSpec)

@@ -11,6 +11,7 @@ type Driver struct {
 	insert map[string]map[string]*sqlite.Stmt
 	update map[string]map[string]*sqlite.Stmt
 	find map[string]map[string]*sqlite.Stmt
+	count map[string]map[string]*sqlite.Stmt
 	delete map[string]map[string]*sqlite.Stmt
 }
 

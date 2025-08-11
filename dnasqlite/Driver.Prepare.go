@@ -1,6 +1,7 @@
 package dnasqlite
 
 import (
+	"strings"
 	"github.com/gwenn/gosqlite"
 	"github.com/luisfurquim/dna"
 )
@@ -29,7 +30,11 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 			if fn, ok = stmtSpec.ColFunc[i]; ok {
 				stmt += fn + "("
 			}
-			stmt += "`" + col.Column + "`"
+			if col.Column=="rowid" && stmtSpec.PkName!="" {
+				stmt += "`" + col.Column + "` AS `**`"
+			} else {
+				stmt += "`" + col.Column + "`"
+			}
 			if ok {
 				stmt += ")"
 			}
@@ -41,7 +46,7 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 		stmt += " FROM `" + stmtSpec.Table + "` "
 
 		if len(stmtSpec.Filter) > 0 {
-			e, err = expr(stmtSpec.Filter)
+			e, err = expr(stmtSpec.Filter, stmtSpec.PkName)
 			if err != nil {
 				Goose.Init.Logf(1,"Error translating where clause %s: %s", stmtSpec.Filter, err)
 				return err
@@ -50,7 +55,7 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 			stmt += "WHERE " + e
 		}
 
-		//Group
+		//TODO: Group
 
 		if len(stmtSpec.Sort) > 0 {
 			stmt += " ORDER BY "
@@ -59,7 +64,7 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 					stmt += ", "
 				}
 				stmt += "`" + stmtSpec.Sort[i] + "`"
-				if stmtSpec.SortDir[i] == ">" {
+				if len(stmtSpec.SortDir)>i && stmtSpec.SortDir[i] == ">" {
 					stmt += " DESC"
 				}
 			}
@@ -68,7 +73,19 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 		if len(stmtSpec.Limit) > 0 {
 			stmt += " LIMIT " + stmtSpec.Limit
 		}
-		
+
+	case dna.CountClause:
+		stmt = "SELECT count(rowid)  FROM `" + stmtSpec.Table + "`"
+		if len(stmtSpec.Filter) > 0 {
+			e, err = expr(stmtSpec.Filter, stmtSpec.PkName)
+			if err != nil {
+				Goose.Init.Logf(1,"Error translating where clause %s: %s", stmtSpec.Filter, err)
+				return err
+			}
+			Goose.Init.Logf(0,"xlate %s -> %s", stmtSpec.Filter, e)
+			stmt += " WHERE " + e
+		}
+
 	case dna.InsertClause:
 		stmt = "INSERT INTO `" + stmtSpec.Table + "` ("
 
@@ -132,7 +149,7 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 		}
 
 		if len(stmtSpec.Filter) > 0 {
-			e, err = expr(stmtSpec.Filter)
+			e, err = expr(stmtSpec.Filter, stmtSpec.PkName)
 			if err != nil {
 				Goose.Init.Logf(1,"Error translating where clause %s: %s", stmtSpec.Filter, err)
 				return err
@@ -144,7 +161,7 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 	case dna.DeleteClause:
 		stmt = "DELETE FROM `" + stmtSpec.Table + "`"
 		if len(stmtSpec.Filter) > 0 {
-			e, err = expr(stmtSpec.Filter)
+			e, err = expr(stmtSpec.Filter, stmtSpec.PkName)
 			if err != nil {
 				Goose.Init.Logf(1,"Error translating where clause %s: %s", stmtSpec.Filter, err)
 				return err
@@ -156,6 +173,9 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 	default:
 		return ErrUnsupportedClause
 	}
+
+	stmt = strings.ReplaceAll(stmt, "`" + stmtSpec.PkName + "`", "rowid")
+	stmt = strings.ReplaceAll(stmt, " AS `**`", " AS `" + stmtSpec.PkFieldName + "`")
 
 	st, err = drv.db.Prepare(stmt)
 	if err != nil {
@@ -175,6 +195,17 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 		}
 
 		drv.find[stmtSpec.Table][stmtSpec.Rule] = st
+
+	case dna.CountClause:
+		if drv.count == nil {
+			drv.count = map[string]map[string]*sqlite.Stmt{}
+		}
+
+		if _, ok = drv.count[stmtSpec.Table]; !ok {
+			drv.count[stmtSpec.Table] = map[string]*sqlite.Stmt{}
+		}
+
+		drv.count[stmtSpec.Table][stmtSpec.Rule] = st
 
 	case dna.InsertClause:
 		if drv.insert == nil {

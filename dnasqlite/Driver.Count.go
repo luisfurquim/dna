@@ -5,37 +5,36 @@ import (
 	"github.com/luisfurquim/dna"
 )
 
-func (drv *Driver) Select(tabName string, at dna.At, fn func(dna.Scanner) error) error {
+func (drv *Driver) Count(tabName string, at dna.At) (int64, error) {
 	var err error
+	var count int64
 	var stmt *sqlite.Stmt
 	var ok bool
 
-	if _, ok = drv.find[tabName]; !ok {
+	if _, ok = drv.count[tabName]; !ok {
 		Goose.Query.Logf(1,"Error binding parameters for table %s: %s", tabName, ErrNoStmtForTable)
-		return ErrNoStmtForTable
+		return 0, ErrNoStmtForTable
 	}
 
-	if stmt, ok = drv.find[tabName][at.With]; !ok {
+	if stmt, ok = drv.count[tabName][at.With]; !ok {
 		Goose.Query.Logf(1,"Error binding parameters for table %s, rule: %s", tabName, at.With, ErrNoStmtForRule)
-		return ErrNoStmtForRule
+		return 0, ErrNoStmtForRule
 	}
 	
 	err = drv.BindParameter(tabName, at, stmt)
 	if err != nil {
 		Goose.Query.Logf(1,"Error binding parameters for table %s, rule %s: %s", tabName, at.With, err)
-		return err
+		return 0, err
 	}
 
 	Goose.Query.Logf(1,"SQL: %s", stmt.SQL())
 	Goose.Query.Logf(1,"Parms: %#v", at.By)
 
-	err = stmt.Select(func(s *sqlite.Stmt) error {
-		return fn(s)
-	})
+	_, err = stmt.SelectOneRow(&count)
+	if err != nil {
+		Goose.Query.Logf(1, "Count error on %s: %s", tabName, err)
+		return 0, err
+	}
 
-//stmt.Reset()  // Importante para limpar o estado da consulta anterior
-//stmt.ClearBindings()
-
-	return err
+	return count, nil
 }
-

@@ -19,6 +19,7 @@ const (
 	InsertClause
 	UpdateClause
 	DeleteClause
+	CountClause
 )
 
 type ColType byte
@@ -106,6 +107,7 @@ type Driver interface {
 	Insert(tabName string, pk driver.NamedValue, parms []driver.NamedValue) (PK, error)
 	Update(tabName string, pk driver.NamedValue, parms []driver.NamedValue) error
 	Delete(tabName string, at At) error
+	Count(tabName string, at At) (int64, error)
 	Exists(tabName string) bool
 }
 
@@ -124,6 +126,7 @@ type StmtSpec struct{
 	Clause           	 Clause
 	Table           	 string
 	PkName             string
+	PkFieldName        string
 	Rule				 	 string
 	Columns          []StmtColSpec
 	Aliases    map[int]string

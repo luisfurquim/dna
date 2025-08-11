@@ -8,6 +8,9 @@ import (
 	"go/parser"
 )
 
+var pkName__ string
+var onVar bool
+
 func xlate(e ast.Expr) (string, error) {
 	var s, s1, s2 string
 	var err error
@@ -51,7 +54,12 @@ func xlate(e ast.Expr) (string, error) {
 			return "", ErrSyntax
 		}
 
+		if s == ":" {
+			onVar = true
+		}
+
 		s1, err = xlate(el.X)
+		onVar = false
 		if err != nil {
 			return "", err
 		}
@@ -125,6 +133,9 @@ func xlate(e ast.Expr) (string, error) {
 		return " " + lit.Value + " IN (" + strings.Join(sargs,",") + ") ", nil
 
 	case *ast.Ident:
+		if !onVar && el.Name == pkName__ {
+			return "rowid", nil
+		}
 		return el.Name, nil
 
 	case *ast.BasicLit:
@@ -152,15 +163,19 @@ func xlate(e ast.Expr) (string, error) {
 	return "", ErrSyntax
 }
 
-func expr(e string) (string, error) {
+func expr(e, pkName string) (string, error) {
 	var err error
 	var exp ast.Expr
+
+	pkName__ = pkName
 
 	exp, err = parser.ParseExpr(strings.Replace(e,"'",`"`,-1))
 	if err != nil {
 		Goose.Init.Logf(1, "Error parsing expression `%s`: %s", e, err)
 		return "", err
 	}
+
+	onVar = false
 
 	return xlate(exp)
 }
