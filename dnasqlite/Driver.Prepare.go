@@ -51,7 +51,7 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 				Goose.Init.Logf(1,"Error translating where clause %s: %s", stmtSpec.Filter, err)
 				return err
 			}
-			Goose.Init.Logf(0,"xlate %s -> %s", stmtSpec.Filter, e)
+			Goose.Init.Logf(4,"xlate %s -> %s", stmtSpec.Filter, e)
 			stmt += "WHERE " + e
 		}
 
@@ -82,7 +82,7 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 				Goose.Init.Logf(1,"Error translating where clause %s: %s", stmtSpec.Filter, err)
 				return err
 			}
-			Goose.Init.Logf(0,"xlate %s -> %s", stmtSpec.Filter, e)
+			Goose.Init.Logf(4,"xlate %s -> %s", stmtSpec.Filter, e)
 			stmt += " WHERE " + e
 		}
 
@@ -154,7 +154,7 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 				Goose.Init.Logf(1,"Error translating where clause %s: %s", stmtSpec.Filter, err)
 				return err
 			}
-			Goose.Init.Logf(0,"xlate %s -> %s", stmtSpec.Filter, e)
+			Goose.Init.Logf(4,"xlate %s -> %s", stmtSpec.Filter, e)
 			stmt += " WHERE " + e + " "
 		}
 
@@ -166,7 +166,7 @@ func (drv *Driver) Prepare(stmtSpec *dna.StmtSpec) error {
 				Goose.Init.Logf(1,"Error translating where clause %s: %s", stmtSpec.Filter, err)
 				return err
 			}
-			Goose.Init.Logf(0,"xlate %s -> %s", stmtSpec.Filter, e)
+			Goose.Init.Logf(4,"xlate %s -> %s", stmtSpec.Filter, e)
 			stmt += " WHERE " + e + " "
 		}
 

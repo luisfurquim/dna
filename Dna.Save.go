@@ -121,6 +121,76 @@ func (d *Dna) save(row interface{}, visited map[string]struct{}, opt []SaveOptio
 }
 
 
+func (d *Dna) saveAt(at At) error {
+	var tabName string
+	var refRow reflect.Value
+	var err error
+	var si *saveInfo
+	var ok bool
+	var parms []driver.NamedValue
+	var fld FieldSpec
+	var fk reflect.Value
+	var c int
+
+	tabName, refRow, err = d.getSingleRefs(at.Table)
+	if err != nil {
+		return err
+	}
+
+	if _, ok = d.saveList[tabName]; !ok {
+		Goose.Query.Logf(1, "No save rules for table %s", tabName)
+		return ErrRuleNotFound
+	}
+
+	if si, ok = d.saveList[tabName][at.With]; !ok {
+		Goose.Query.Logf(1, "Save rule %s not found for table %s", at.With, tabName)
+		return ErrRuleNotFound
+	}
+
+	parms = make([]driver.NamedValue, 0, len(si.cols)+len(at.By))
+	for _, c = range si.cols {
+		fld = d.tables[tabName].fields[c]
+		if fld.Fk != "" {
+			fk = refRow.Field(fld.Index)
+			if !fk.IsValid() || fk.IsNil() || fk.IsZero() {
+				parms = append(parms, driver.NamedValue{
+					Name: fld.Name,
+					Value: 0,
+				})
+			} else {
+				fk = fk.Elem().Field(d.tables[fld.Fk].pkIndex)
+				parms = append(parms, driver.NamedValue{
+					Name: fld.Name,
+					Value: fk.Interface(),
+				})
+			}
+		} else {
+			parms = append(parms, driver.NamedValue{
+				Name: fld.Name,
+				Value: refRow.Field(fld.Index).Interface(),
+			})
+		}
+	}
+
+	for k, v := range at.By {
+		parms = append(parms, driver.NamedValue{
+			Name: k,
+			Value: v,
+		})
+	}
+
+	err = d.driver.UpdateAt(tabName, at, parms)
+	if err != nil {
+		Goose.Query.Logf(1, "UpdateAt error on %s rule %s: %s", tabName, at.With, err)
+		return err
+	}
+
+	return nil
+}
+
 func (d *Dna) Save(row interface{}, opt ...SaveOption) (PK, error) {
+	if at, ok := row.(At); ok {
+		return 0, d.saveAt(at)
+	}
 	return d.save(row, map[string]struct{}{}, opt)
 }

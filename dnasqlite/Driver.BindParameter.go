@@ -15,27 +15,27 @@ func (drv *Driver) BindParameter(tabName string, at dna.At, stmt *sqlite.Stmt) e
 
 	for parmName, parm = range at.By {
 		index, err = stmt.BindParameterIndex(":" + parmName)
-//		Goose.Query.Logf(1, "will bind %s with %#v", parmName, parm)
+		Goose.Query.Logf(4, "will bind %s with %#v", parmName, parm)
 		if err == nil {
 			err = stmt.BindByIndex(index, parm)
-//			Goose.Query.Logf(1, "bound %s (%d) with %#v: %s", parmName, index, parm, err)
+			Goose.Query.Logf(4, "bound %s (%d) with %#v: %s", parmName, index, parm, err)
 			if fmt.Sprintf("%s", err) == "bad parameter or other API misuse (Stmt.Bind) (bad parameter or other API misuse)" {
 				s, err = drv.db.Prepare(stmt.SQL())
 				if err == nil {
 					*stmt = *s
 					err = stmt.BindByIndex(index, parm)
-					Goose.Query.Logf(0, "AGAIN: bound %s (%d) with %#v: %s", parmName, index, parm, err)
+					Goose.Query.Logf(4, "AGAIN: bound %s (%d) with %#v: %s", parmName, index, parm, err)
 				}
-//			} else {
-//				Goose.Query.Logf(0, "[%s]!=[bad parameter or other API misuse (Stmt.Bind) (bad parameter or other API misuse)]", err)
+			} else {
+				Goose.Query.Logf(4, "[%s]!=[bad parameter or other API misuse (Stmt.Bind) (bad parameter or other API misuse)]", err)
 			}
 			if err != nil {
-//				Goose.Query.Logf(1, "Error binding on list of table %s for %s: %s", tabName, parmName, err)
-//				Goose.Query.Logf(1, "SQL: %s", stmt.SQL())
+				Goose.Query.Logf(1, "Error binding on list of table %s for %s: %s", tabName, parmName, err)
+				Goose.Query.Logf(3, "SQL: %s", stmt.SQL())
 				return err
 			}
-//		} else {
-//			Goose.Query.Logf(1, "bind error %s with %#v on table %s => %s", parmName, parm, tabName, err)
+		} else {
+			Goose.Query.Logf(1, "bind error %s with %#v on table %s => %s", parmName, parm, tabName, err)
 		}
 	}
 

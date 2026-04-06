@@ -80,6 +80,10 @@ type list struct {
 //	stmt *sqlite.Stmt
 }
 
+type saveInfo struct {
+	cols []int // indices no array fields da tabela
+}
+
 type listSpec struct {
 	cols           []string
 	colTypes map[int]string
@@ -92,6 +96,7 @@ type Dna struct {
 	tables map[string]table
 	tableType map[string]string
 	list map[string]map[string]*list
+	saveList map[string]map[string]*saveInfo
 	driver Driver
 }
 
@@ -107,6 +112,7 @@ type Driver interface {
 	Insert(tabName string, pk driver.NamedValue, parms []driver.NamedValue) (PK, error)
 	Update(tabName string, pk driver.NamedValue, parms []driver.NamedValue) error
 	Delete(tabName string, at At) error
+	UpdateAt(tabName string, at At, parms []driver.NamedValue) error
 	Count(tabName string, at At) (int64, error)
 	Exists(tabName string) bool
 }

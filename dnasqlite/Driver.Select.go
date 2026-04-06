@@ -26,8 +26,8 @@ func (drv *Driver) Select(tabName string, at dna.At, fn func(dna.Scanner) error)
 		return err
 	}
 
-	Goose.Query.Logf(1,"SQL: %s", stmt.SQL())
-	Goose.Query.Logf(1,"Parms: %#v", at.By)
+	Goose.Query.Logf(4,"SQL: %s", stmt.SQL())
+	Goose.Query.Logf(4,"Parms: %#v", at.By)
 
 	err = stmt.Select(func(s *sqlite.Stmt) error {
 		return fn(s)

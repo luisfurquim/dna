@@ -31,6 +31,9 @@ func New(driver Driver, schema Schema) (*Dna, error) {
 	var pkColumnName string
 	var pkIndex int
 	var tmpList map[string]listSpec
+	var tmpSaveList map[string]listSpec
+	var saveSpec listSpec
+	var fldIdx int
 	var rule string
 	var spec listSpec
 	var cols []int
@@ -105,6 +108,7 @@ tableLoop1:
 		fldList   = make([]FieldSpec,0,reftab.NumField())
 		xrefs     = make(map[string]string,8)
 		tmpList   = map[string]listSpec{}
+		tmpSaveList = map[string]listSpec{}
 		countSpec = map[string]string{}
 		pkIndex   = -1
 
@@ -155,6 +159,15 @@ tableLoop:
 					}
 
 					tmpList[f.Name] = lSpec
+				}
+
+			} else if f.Type == SaveType {
+				if colNames, ok = f.Tag.Lookup("cols"); ok && len(colNames)>0 {
+					filterSpec, _ = f.Tag.Lookup("by")
+					tmpSaveList[f.Name] = listSpec{
+						cols: strings.Split(colNames, ","),
+						filter: filterSpec,
+					}
 				}
 
 			} else {
@@ -495,6 +508,62 @@ tableLoop:
 			if err != nil {
 				Goose.Init.Logf(1,"Err compiling updateBy: %s", err)
 				return nil, err
+			}
+
+			if len(tmpSaveList) > 0 {
+				if d.saveList == nil {
+					d.saveList = map[string]map[string]*saveInfo{}
+				}
+
+				if _, ok = d.saveList[tabName]; !ok {
+					d.saveList[tabName] = map[string]*saveInfo{}
+				}
+
+				for rule, saveSpec = range tmpSaveList {
+					stmtSpec = &StmtSpec{
+						Clause: UpdateClause,
+						Table: tabName,
+						PkName: pkColumnName,
+						Rule: rule,
+						PkFieldName: pkColumnName,
+					}
+
+					cols = make([]int, 0, len(saveSpec.cols))
+					stmtSpec.Columns = []StmtColSpec{}
+					for j=0; j<len(saveSpec.cols); j++ {
+						fldIdx = -1
+						for k=0; k<len(fldList); k++ {
+							if saveSpec.cols[j] == fldList[k].Name {
+								fldIdx = k
+								break
+							}
+						}
+						if fldIdx < 0 {
+							Goose.Init.Logf(1,"Err compiling save rule %s from %s: %s", rule, tabName, ErrColumnNotFound)
+							return nil, ErrColumnNotFound
+						}
+						cols = append(cols, fldIdx)
+						stmtSpec.Columns = append(stmtSpec.Columns, StmtColSpec{
+							Column: fldList[fldIdx].Name,
+							Value:  fldList[fldIdx].Name,
+							Type:   VarColType,
+						})
+					}
+
+					if len(saveSpec.filter) > 0 {
+						stmtSpec.Filter = saveSpec.filter
+					}
+
+					err = driver.Prepare(stmtSpec)
+					if err != nil {
+						Goose.Init.Logf(1,"Err compiling save rule %s from %s: %s", rule, tabName, err)
+						return nil, err
+					}
+
+					d.saveList[tabName][rule] = &saveInfo{
+						cols: cols,
+					}
+				}
 			}
 
 			stmtSpec = &StmtSpec{
