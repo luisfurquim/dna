@@ -121,6 +121,41 @@ type Scanner interface{
 	Scan(parameters ...interface{}) error
 }
 
+// MigrationDriver extends Driver with schema migration capabilities.
+// Drivers that implement this interface enable automatic schema migration
+// when the struct definition changes between application versions.
+// Drivers that do NOT implement this interface continue to work with
+// the legacy create-if-not-exists behavior.
+type MigrationDriver interface {
+	Driver
+
+	// CreateVersionTable creates the __VERSION__ table if it does not exist.
+	CreateVersionTable() error
+
+	// GetVersion retrieves the version record for a table.
+	// Returns nil, nil if no record is found.
+	GetVersion(tableName string) (*VersionRecord, error)
+
+	// SetVersion inserts or updates the version record for a table.
+	SetVersion(rec VersionRecord) error
+
+	// MigrateTable applies a TableDiff to the database.
+	// The migrateExprs map contains column names to driver-specific SQL expressions
+	// for data conversion (already translated from neutral form via TranslateExpr).
+	MigrateTable(diff TableDiff, migrateExprs map[string]string) error
+
+	// TranslateExpr translates a neutral Go-like expression (from a migrate: tag)
+	// to driver-specific SQL. Uses the same expression system as the by: tags.
+	TranslateExpr(neutralExpr string, pkName string) (string, error)
+
+	// CopyTableTo copies all data from a table into the same-named table
+	// on another driver instance. Used by ExplainMigration for dry-run.
+	// The target must be the same concrete driver type.
+	// The targetDriver parameter is interface{} to avoid circular type constraints;
+	// each driver implementation asserts it to its own concrete type.
+	CopyTableTo(targetDriver interface{}, tableName string, fields []FieldSpec) error
+}
+
 type StmtColSpec struct{
 	Column  string
 	Value   string

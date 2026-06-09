@@ -1,8 +1,10 @@
 package dna
 
 import (
+	"fmt"
 	"strings"
 	"reflect"
+	"time"
 	"unicode"
 )
 
@@ -52,6 +54,10 @@ func New(driver Driver, schema Schema) (*Dna, error) {
 	var selector, cspec string
 	var ignore string
 	var stmtSpec *StmtSpec
+	var migrateExprs map[string]string
+	var renameMap map[string]string
+	var migrateExpr string
+	var migrateFrom string
 
 	if len(schema.Tables) == 0 {
 		Goose.Init.Logf(1,"Error: %s", ErrNoTablesFound)
@@ -110,6 +116,8 @@ tableLoop1:
 		tmpList   = map[string]listSpec{}
 		tmpSaveList = map[string]listSpec{}
 		countSpec = map[string]string{}
+		migrateExprs = map[string]string{}
+		renameMap = map[string]string{}
 		pkIndex   = -1
 
 tableLoop:
@@ -194,6 +202,13 @@ tableLoop:
 					fld.Prec = strings.Split(fldPrec, ",")
 				}
 
+				if migrateExpr, ok = f.Tag.Lookup("migrate"); ok && len(migrateExpr)>0 {
+					migrateExprs[fld.Name] = migrateExpr
+				}
+				if migrateFrom, ok = f.Tag.Lookup("migrate_from"); ok && len(migrateFrom)>0 {
+					renameMap[fld.Name] = migrateFrom
+				}
+
 				fld.Fk = ""
 				if f.Type.Kind() == reflect.Pointer {
 					if fk, ok = d.tableType[f.Type.Elem().Name()]; ok {
@@ -246,10 +261,111 @@ tableLoop:
 			d.list[tabName] = map[string]*list{}
 
 			colNames, cols = driver.ColumnSpecs(fldList, pkIndex)
-			err = driver.CreateTable(tabName, fldList)
-			if err != nil {
-				Goose.Init.Logf(1,"Error creating %s table: %s", tabName, err)
-				return nil, err
+
+			if migDriver, ok := driver.(MigrationDriver); ok {
+				err = migDriver.CreateVersionTable()
+				if err != nil {
+					Goose.Init.Logf(1,"Error creating version table: %s", err)
+					return nil, err
+				}
+
+				versionRec, verr := migDriver.GetVersion(tabName)
+				if verr != nil {
+					Goose.Init.Logf(1,"Error getting version for %s: %s", tabName, verr)
+					return nil, verr
+				}
+
+				newHash := VersionHash(fldList)
+
+				if versionRec == nil {
+					// Table is new or pre-migration — create it
+					err = driver.CreateTable(tabName, fldList)
+					if err != nil {
+						Goose.Init.Logf(1,"Error creating %s table: %s", tabName, err)
+						return nil, err
+					}
+
+					err = migDriver.SetVersion(VersionRecord{
+						TableName:   tabName,
+						VersionHash: newHash,
+						Definition:  CanonicalJSON(fldList),
+						UpdatedAt:   time.Now().UTC().Format(time.RFC3339),
+					})
+					if err != nil {
+						Goose.Init.Logf(1,"Error setting version for %s: %s", tabName, err)
+						return nil, err
+					}
+
+				} else if versionRec.VersionHash == newHash {
+					// Schema unchanged — no migration needed
+					Goose.Init.Logf(5,"Table %s: schema unchanged (hash %s)", tabName, newHash)
+
+				} else {
+					// Schema changed — calculate diff and migrate
+					Goose.Init.Logf(3,"Table %s: schema changed, migrating (old hash %s, new hash %s)", tabName, versionRec.VersionHash, newHash)
+
+					oldFields, derr := deserializeFieldSpecs(versionRec.Definition)
+					if derr != nil {
+						Goose.Init.Logf(1,"Error deserializing old schema for %s: %s", tabName, derr)
+						return nil, derr
+					}
+
+					diff := calculateTableDiff(tabName, oldFields, fldList, renameMap)
+
+					// Translate migrate expressions from neutral to driver-specific
+					driverExprs := map[string]string{}
+					for colName, neutralExpr := range migrateExprs {
+						translated, terr := migDriver.TranslateExpr(neutralExpr, pkColumnName)
+						if terr != nil {
+							Goose.Init.Logf(1,"Error translating migrate expression for %s.%s: %s", tabName, colName, terr)
+							return nil, fmt.Errorf("table %s, column %s: translate migrate expr: %w", tabName, colName, terr)
+						}
+						driverExprs[colName] = translated
+					}
+
+					warnings, cerr := classifyChanges(&diff, migrateExprs)
+					if cerr != nil {
+						Goose.Init.Logf(1,"Error classifying migration changes for %s: %s", tabName, cerr)
+						return nil, cerr
+					}
+					for _, w := range warnings {
+						Goose.Init.Logf(2,"Migration warning for %s: %s", tabName, w)
+					}
+
+					// Execute migration
+					err = migDriver.MigrateTable(diff, driverExprs)
+					if err != nil {
+						Goose.Init.Logf(1,"Error migrating %s: %s", tabName, err)
+						return nil, err
+					}
+
+					// Execute custom Go callback if registered
+					if cb, cbOk := migrationCallbacks[tabName]; cbOk {
+						if err = cb(&d); err != nil {
+							Goose.Init.Logf(1,"Error in migration callback for %s: %s", tabName, err)
+							return nil, err
+						}
+					}
+
+					// Update version record
+					err = migDriver.SetVersion(VersionRecord{
+						TableName:   tabName,
+						VersionHash: newHash,
+						Definition:  CanonicalJSON(fldList),
+						UpdatedAt:   time.Now().UTC().Format(time.RFC3339),
+					})
+					if err != nil {
+						Goose.Init.Logf(1,"Error updating version for %s: %s", tabName, err)
+						return nil, err
+					}
+				}
+			} else {
+				// Legacy path: no migration support
+				err = driver.CreateTable(tabName, fldList)
+				if err != nil {
+					Goose.Init.Logf(1,"Error creating %s table: %s", tabName, err)
+					return nil, err
+				}
 			}
 
 			stmtSpec = &StmtSpec{
