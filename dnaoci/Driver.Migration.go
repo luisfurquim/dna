@@ -175,7 +175,10 @@ func (drv *Driver) MigrateTable(diff dna.TableDiff, migrateExprs map[string]stri
 			qt, tabName, qt, qt, f.Name, qt, colType)
 		Goose.Init.Logf(4, "Migration SQL: %s", sqlStr)
 		if _, err := drv.db.Exec(sqlStr); err != nil {
-			return fmt.Errorf("MigrateTable: add column %s: %w", f.Name, err)
+			if !strings.Contains(fmt.Sprintf("%s", err), "ORA-01430") {
+				return fmt.Errorf("MigrateTable: add column %s: %w", f.Name, err)
+			}
+			Goose.Init.Logf(4, "Migration: column %s already exists, skipping", f.Name)
 		}
 	}
 
@@ -237,7 +240,10 @@ func (drv *Driver) MigrateTable(diff dna.TableDiff, migrateExprs map[string]stri
 			qt, tabName, qt, qt, f.Name, qt)
 		Goose.Init.Logf(4, "Migration SQL: %s", sqlStr)
 		if _, err := drv.db.Exec(sqlStr); err != nil {
-			return fmt.Errorf("MigrateTable: drop column %s: %w", f.Name, err)
+			if !strings.Contains(fmt.Sprintf("%s", err), "ORA-00904") {
+				return fmt.Errorf("MigrateTable: drop column %s: %w", f.Name, err)
+			}
+			Goose.Init.Logf(4, "Migration: column %s does not exist, skipping drop", f.Name)
 		}
 	}
 
