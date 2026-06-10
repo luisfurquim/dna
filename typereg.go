@@ -23,6 +23,7 @@ var typeRegistry = map[string]reflect.Type{
 	"float64": reflect.TypeOf(float64(0)),
 	"string":  reflect.TypeOf(""),
 	"[]uint8": reflect.TypeOf([]byte{}),
+	"github.com/luisfurquim/dna.PK": reflect.TypeOf(PK(0)),
 }
 
 // typeString converts a reflect.Type to a stable, deterministic string representation.
