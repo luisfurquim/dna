@@ -7,6 +7,20 @@ import (
 	"github.com/luisfurquim/dna"
 )
 
+func oraValue(v interface{}) interface{} {
+	switch p := v.(type) {
+	case bool:
+		if p {
+			return "T"
+		}
+		return "F"
+	case dna.PK:
+		return int64(p)
+	default:
+		return v
+	}
+}
+
 func (drv *Driver) Insert(tabName string, pk driver.NamedValue, parms []driver.NamedValue) (dna.PK, error) {
 	var err error
 	var entry *stmtEntry
@@ -27,9 +41,9 @@ func (drv *Driver) Insert(tabName string, pk driver.NamedValue, parms []driver.N
 	args := make([]interface{}, 0, len(parms)+1)
 	for _, p := range parms {
 		if p.Name != "" {
-			args = append(args, sql.Named(p.Name, p.Value))
+			args = append(args, sql.Named(p.Name, oraValue(p.Value)))
 		} else {
-			args = append(args, p.Value)
+			args = append(args, oraValue(p.Value))
 		}
 	}
 

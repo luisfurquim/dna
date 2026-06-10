@@ -25,9 +25,9 @@ func (drv *Driver) UpdateAt(tabName string, at dna.At, parms []driver.NamedValue
 	args := make([]interface{}, 0, len(parms))
 	for _, p := range parms {
 		if p.Name != "" {
-			args = append(args, sql.Named(p.Name, p.Value))
+			args = append(args, sql.Named(p.Name, oraValue(p.Value)))
 		} else {
-			args = append(args, p.Value)
+			args = append(args, oraValue(p.Value))
 		}
 	}
 

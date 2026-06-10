@@ -23,17 +23,17 @@ func (drv *Driver) Update(tabName string, pk driver.NamedValue, parms []driver.N
 	args := make([]interface{}, 0, len(parms)+1)
 	for _, p := range parms {
 		if p.Name != "" {
-			args = append(args, sql.Named(p.Name, p.Value))
+			args = append(args, sql.Named(p.Name, oraValue(p.Value)))
 		} else {
-			args = append(args, p.Value)
+			args = append(args, oraValue(p.Value))
 		}
 	}
 
 	// PK as last parameter (WHERE clause)
 	if pk.Name != "" {
-		args = append(args, sql.Named(pk.Name, pk.Value))
+		args = append(args, sql.Named(pk.Name, oraValue(pk.Value)))
 	} else {
-		args = append(args, pk.Value)
+		args = append(args, oraValue(pk.Value))
 	}
 
 	_, err = entry.stmt.Exec(args...)
