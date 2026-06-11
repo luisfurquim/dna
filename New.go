@@ -8,7 +8,7 @@ import (
 	"unicode"
 )
 
-func New(driver Driver, schema Schema) (*Dna, error) {
+func New(driver Driver, schema Schema, options ...uint64) (*Dna, error) {
 	var tab interface{}
 	var reftab reflect.Type
 	var tabName string
@@ -58,6 +58,10 @@ func New(driver Driver, schema Schema) (*Dna, error) {
 	var renameMap map[string]string
 	var migrateExpr string
 	var migrateFrom string
+
+	if len(options) > 1 {
+		return nil, ErrTooManyOptions
+	}
 
 	if len(schema.Tables) == 0 {
 		Goose.Init.Logf(1,"Error: %s", ErrNoTablesFound)
@@ -262,6 +266,9 @@ tableLoop:
 
 			colNames, cols = driver.ColumnSpecs(fldList, pkIndex)
 
+			skipCreate := len(options) > 0 && (options[0]&OptSkipCreate) != 0
+
+		if len(options) > 0 && (options[0]&OptMigrate) != 0 {
 			if migDriver, ok := driver.(MigrationDriver); ok {
 				err = migDriver.CreateVersionTable()
 				if err != nil {
@@ -279,10 +286,12 @@ tableLoop:
 
 				if versionRec == nil {
 					// Table is new or pre-migration — create it
-					err = driver.CreateTable(tabName, fldList)
-					if err != nil {
-						Goose.Init.Logf(1,"Error creating %s table: %s", tabName, err)
-						return nil, err
+					if !skipCreate {
+						err = driver.CreateTable(tabName, fldList)
+						if err != nil {
+							Goose.Init.Logf(1,"Error creating %s table: %s", tabName, err)
+							return nil, err
+						}
 					}
 
 					err = migDriver.SetVersion(VersionRecord{
@@ -359,7 +368,7 @@ tableLoop:
 						return nil, err
 					}
 				}
-			} else {
+			} else if !skipCreate {
 				// Legacy path: no migration support
 				err = driver.CreateTable(tabName, fldList)
 				if err != nil {
@@ -367,6 +376,14 @@ tableLoop:
 					return nil, err
 				}
 			}
+		} else if !skipCreate {
+			// No migration requested: just create table
+			err = driver.CreateTable(tabName, fldList)
+			if err != nil {
+				Goose.Init.Logf(1,"Error creating %s table: %s", tabName, err)
+				return nil, err
+			}
+		}
 
 			stmtSpec = &StmtSpec{
 				Clause: SelectClause,

@@ -13,6 +13,11 @@ const(
 	NoCascade SaveOption = iota
 )
 
+const (
+	OptMigrate    uint64 = 1 << iota
+	OptSkipCreate
+)
+
 type Clause byte
 const (
 	SelectClause Clause = iota
@@ -205,6 +210,7 @@ var ErrInvalid               error = errors.New("Invalid")
 var ErrNullColumn            error = errors.New("Null column")
 var ErrPKNotI64              error = errors.New("Primary key is not int64")
 var ErrWrongParmCount        error = errors.New("Wrong parameter count")
+var ErrTooManyOptions        error = errors.New("Too many options")
 
 
 var TableNameType reflect.Type = reflect.TypeOf(TableName{})
